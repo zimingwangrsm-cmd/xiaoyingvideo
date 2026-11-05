@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "34832450124f497fad3af231a9e53c22",
+  "projectId": "007699f00f7f44caa2583f49c7abec22",
+  "snapshotRevision": 5,
+  "renderKey": "8315812ef7015aa0f39fa3245d968663d13c955bde039b17f48f3c4b7029f88f",
+  "sourceSha256": "e7a945754dc7f7eb27fc0d913f59b36cd1d9a394b414c1f8e24f552a74c6699b",
+  "origin": "synthetic_sample",
+  "sampleInfo": {
+    "id": "interview_intro_v1",
+    "title": "面试项目介绍精简示例",
+    "description": "按完整句确认必留、删减与恢复，再生成真实短片。",
+    "origin": "synthetic_narration",
+    "label": "合成旁白＋示例画面",
+    "durationMs": 136566.66666666666,
+    "transcriptVerified": false,
+    "recommendedLockedIds": [
+      "s03",
+      "s04",
+      "s05"
+    ],
+    "sourceSha256": "e7a945754dc7f7eb27fc0d913f59b36cd1d9a394b414c1f8e24f552a74c6699b"
+  },
+  "selection": {
+    "targetMs": 60000,
+    "keptBlockIds": [
+      "s03",
+      "s04",
+      "s05",
+      "s10",
+      "s12"
+    ],
+    "lockedBlockIds": [
+      "s03",
+      "s04",
+      "s05"
+    ],
+    "suggestionSource": "rules",
+    "hasManualEdits": true
+  },
+  "spans": [
+    {
+      "sourceStartFrame": 561,
+      "sourceEndFrame": 1619,
+      "outputStartFrame": 0,
+      "blockIds": [
+        "s03",
+        "s04",
+        "s05"
+      ]
+    },
+    {
+      "sourceStartFrame": 2814,
+      "sourceEndFrame": 3143,
+      "outputStartFrame": 1058,
+      "blockIds": [
+        "s10"
+      ]
+    },
+    {
+      "sourceStartFrame": 3435,
+      "sourceEndFrame": 3788,
+      "outputStartFrame": 1387,
+      "blockIds": [
+        "s12"
+      ]
+    }
+  ],
+  "captions": [
+    {
+      "id": "c003",
+      "startMs": 267.0,
+      "endMs": 11300.0,
+      "text": "我建议先看岗位要求，再选择最相关的项目；如果岗位明确要求作品集，再优先准备项目展示。"
+    },
+    {
+      "id": "c004",
+      "startMs": 11834.0,
+      "endMs": 20433.0,
+      "text": "不是所有岗位都需要额外做一套作品集，也不是展示页面越多，别人就越容易理解。"
+    },
+    {
+      "id": "c005",
+      "startMs": 20967.0,
+      "endMs": 35000.0,
+      "text": "可以先用三句话建立开头的结构：你解决了什么问题，你具体做了什么，结果有什么证据。这不是要求你把所有细节都塞进三句话里。"
+    },
+    {
+      "id": "c010",
+      "startMs": 35533.66666666666,
+      "endMs": 45966.66666666666,
+      "text": "如果项目还没有正式上线，就清楚说明目前做到哪一步，不要把计划中的效果写成已经发生。"
+    },
+    {
+      "id": "c012",
+      "startMs": 46500.33333333334,
+      "endMs": 57733.33333333334,
+      "text": "练习时可以录一遍，再听有没有重复或跳步。需要删短时，先删重复，再检查重要条件是否还在。"
+    }
+  ],
+  "plannedDurationMs": 58000.0,
+  "actualDurationMs": 58022.0,
+  "targetMet": true,
+  "subtitles": "Separate SRT/VTT; not burned into MP4",
+  "videoSha256": "1edcbbba6664b32b1700346e53f5adea916f0221a8a127440602317d65cd1263",
+  "subtitleSha256": "ac06b7dfaf0d28fd84ae649b6c7ed7390ad6ff70ae84a8cd620dcf1cffdde43e",
+  "keptBlockIds": [
+    "s03",
+    "s04",
+    "s05",
+    "s10",
+    "s12"
+  ],
+  "deletedBlockIds": [
+    "s01",
+    "s02",
+    "s06",
+    "s07",
+    "s08",
+    "s09",
+    "s11",
+    "s13"
+  ]
+}

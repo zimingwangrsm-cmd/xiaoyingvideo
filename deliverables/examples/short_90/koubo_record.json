@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "71e8dd2799fe4a5ea4f55169ba6997ae",
+  "projectId": "752b6cf467ef4d25983fac6710757eff",
+  "snapshotRevision": 5,
+  "renderKey": "1a12fdeb2af3414b4aee9206907e7a7543320660cdf84d0bc4653a56490feeb2",
+  "sourceSha256": "e7a945754dc7f7eb27fc0d913f59b36cd1d9a394b414c1f8e24f552a74c6699b",
+  "origin": "synthetic_sample",
+  "sampleInfo": {
+    "id": "interview_intro_v1",
+    "title": "面试项目介绍精简示例",
+    "description": "按完整句确认必留、删减与恢复，再生成真实短片。",
+    "origin": "synthetic_narration",
+    "label": "合成旁白＋示例画面",
+    "durationMs": 136566.66666666666,
+    "transcriptVerified": false,
+    "recommendedLockedIds": [
+      "s03",
+      "s04",
+      "s05"
+    ],
+    "sourceSha256": "e7a945754dc7f7eb27fc0d913f59b36cd1d9a394b414c1f8e24f552a74c6699b"
+  },
+  "selection": {
+    "targetMs": 90000,
+    "keptBlockIds": [
+      "s01",
+      "s03",
+      "s04",
+      "s05",
+      "s07",
+      "s10",
+      "s12"
+    ],
+    "lockedBlockIds": [
+      "s03",
+      "s04",
+      "s05"
+    ],
+    "suggestionSource": "rules",
+    "hasManualEdits": true
+  },
+  "spans": [
+    {
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 292,
+      "outputStartFrame": 0,
+      "blockIds": [
+        "s01"
+      ]
+    },
+    {
+      "sourceStartFrame": 561,
+      "sourceEndFrame": 1619,
+      "outputStartFrame": 292,
+      "blockIds": [
+        "s03",
+        "s04",
+        "s05"
+      ]
+    },
+    {
+      "sourceStartFrame": 1966,
+      "sourceEndFrame": 2273,
+      "outputStartFrame": 1350,
+      "blockIds": [
+        "s07"
+      ]
+    },
+    {
+      "sourceStartFrame": 2814,
+      "sourceEndFrame": 3143,
+      "outputStartFrame": 1657,
+      "blockIds": [
+        "s10"
+      ]
+    },
+    {
+      "sourceStartFrame": 3435,
+      "sourceEndFrame": 3788,
+      "outputStartFrame": 1986,
+      "blockIds": [
+        "s12"
+      ]
+    }
+  ],
+  "captions": [
+    {
+      "id": "c001",
+      "startMs": 267.0,
+      "endMs": 9466.0,
+      "text": "今天想分享一个准备面试项目介绍的小方法，主要讲怎么让别人听懂你做了什么。"
+    },
+    {
+      "id": "c003",
+      "startMs": 10000.333333333336,
+      "endMs": 21033.333333333336,
+      "text": "我建议先看岗位要求，再选择最相关的项目；如果岗位明确要求作品集，再优先准备项目展示。"
+    },
+    {
+      "id": "c004",
+      "startMs": 21567.333333333336,
+      "endMs": 30166.333333333336,
+      "text": "不是所有岗位都需要额外做一套作品集，也不是展示页面越多，别人就越容易理解。"
+    },
+    {
+      "id": "c005",
+      "startMs": 30700.333333333336,
+      "endMs": 44733.333333333336,
+      "text": "可以先用三句话建立开头的结构：你解决了什么问题，你具体做了什么，结果有什么证据。这不是要求你把所有细节都塞进三句话里。"
+    },
+    {
+      "id": "c007",
+      "startMs": 45266.666666666664,
+      "endMs": 54966.666666666664,
+      "text": "比如介绍一个数据项目，可以先说原来哪一步很慢，再解释你改了哪一步，最后展示怎么比较。"
+    },
+    {
+      "id": "c010",
+      "startMs": 55500.33333333334,
+      "endMs": 65933.33333333334,
+      "text": "如果项目还没有正式上线，就清楚说明目前做到哪一步，不要把计划中的效果写成已经发生。"
+    },
+    {
+      "id": "c012",
+      "startMs": 66467.0,
+      "endMs": 77700.0,
+      "text": "练习时可以录一遍，再听有没有重复或跳步。需要删短时，先删重复，再检查重要条件是否还在。"
+    }
+  ],
+  "plannedDurationMs": 77966.66666666667,
+  "actualDurationMs": 77988.0,
+  "targetMet": true,
+  "subtitles": "Separate SRT/VTT; not burned into MP4",
+  "videoSha256": "b8f12a17f7ae007eda1b12884eadd9577e3d1640068730055510a92a5429ef46",
+  "subtitleSha256": "45c9f5478c0e05f3a911f377d8336ed70f3765dec2e2ce65d9a8939241dea8dc",
+  "keptBlockIds": [
+    "s01",
+    "s03",
+    "s04",
+    "s05",
+    "s07",
+    "s10",
+    "s12"
+  ],
+  "deletedBlockIds": [
+    "s02",
+    "s06",
+    "s08",
+    "s09",
+    "s11",
+    "s13"
+  ]
+}

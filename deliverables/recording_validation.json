@@ -1,0 +1,113 @@
+{
+  "recordedAt": "2026-11-05T16:45:03.430Z",
+  "baseUrl": "http://127.0.0.1:8767",
+  "browser": "157.0.8103.38",
+  "durationSeconds": 171.44,
+  "capturedFrames": 4286,
+  "meanVolumeDb": -26.8,
+  "method": "Continuous Xvfb desktop capture with FFmpeg x11grab + isolated PulseAudio sink monitor; no cuts or speed changes",
+  "audio": "Actual browser source/result playback; no microphone narration or replacement soundtrack",
+  "video": "walkthrough.mp4",
+  "projectId": "9cd0387e357743ce93322e3e4a1099a1",
+  "finalPlannedDurationMs": 77966.66666666667,
+  "renderReadyAtSeconds": 103.022,
+  "steps": [
+    {
+      "second": 0.002,
+      "text": "开始页：原创合成旁白样例，规则建议"
+    },
+    {
+      "second": 8,
+      "text": "打开现有样例"
+    },
+    {
+      "second": 14.001,
+      "text": "实际播放原片与字幕"
+    },
+    {
+      "second": 22,
+      "text": "点击第三段文字定位原片"
+    },
+    {
+      "second": 28.002,
+      "text": "确认条件、否定和数字片段必留"
+    },
+    {
+      "second": 35,
+      "text": "目标30秒：必留35.267秒，展示真实冲突"
+    },
+    {
+      "second": 42.001,
+      "text": "调回90秒并生成规则建议"
+    },
+    {
+      "second": 54,
+      "text": "查看理由后应用，保守建议仍超过目标"
+    },
+    {
+      "second": 61,
+      "text": "人工确认删除重复与次要内容"
+    },
+    {
+      "second": 76.001,
+      "text": "恢复一段并撤销，选择可逆"
+    },
+    {
+      "second": 87.001,
+      "text": "生成实际短片；保留完整渲染等待"
+    },
+    {
+      "second": 103.024,
+      "text": "播放成片，跨过第一处删减切口"
+    },
+    {
+      "second": 114.001,
+      "text": "继续播放另一处切口和同步字幕"
+    },
+    {
+      "second": 124.001,
+      "text": "下载同一次剪辑的MP4、SRT和删减记录"
+    },
+    {
+      "second": 136,
+      "text": "恢复片段后，上一版文件不可作为当前结果下载"
+    },
+    {
+      "second": 147,
+      "text": "返回撤销恢复，再次生成当前版本"
+    },
+    {
+      "second": 163.987,
+      "text": "最终真实成片：77.988秒，规则建议加人工确认"
+    },
+    {
+      "second": 170,
+      "text": "演示结束"
+    }
+  ],
+  "downloads": {
+    "mp4": "walkthrough_download.mp4",
+    "srt": "walkthrough_download.srt",
+    "record": "walkthrough_download_record.json"
+  },
+  "audioTimestampNormalization": "FFmpeg aresample=async=1000:first_pts=0 on captured audio; original video bitstream copied unchanged",
+  "videoBitstreamHash": "SHA256=361ff64ac76f74c1b2a4c23efab49157cb85e9dfade9232db86e1106398ee1cd",
+  "videoBitstreamUnchanged": true,
+  "audioVideoSpotChecks": [
+    {
+      "recordingSecond": 18,
+      "visibleSourceSecond": 3.433,
+      "waveformSourceSecond": 3.4435,
+      "deltaMs": 10.5
+    },
+    {
+      "recordingSecond": 110,
+      "visibleSourceSecond": 20.6,
+      "waveformSourceSecond": 20.635125,
+      "deltaMs": 35.125
+    }
+  ],
+  "spotCheckMethod": "Cross-correlation of captured audio against original sample at 8 kHz, compared with visible source-time labels in extracted video frames; not a human transcript/naturalness review.",
+  "sha256": "015f6853e92797a929708af188e7b31e7e272f450dfd36a6f147d3c7e55c570d",
+  "fileSizeBytes": 3319740
+}

@@ -1,0 +1,57 @@
+[
+  {
+    "label": "short_90",
+    "actualDurationMs": 77988.0,
+    "plannedDurationMs": 77966.66666666667,
+    "targetMet": true,
+    "blocks": [
+      "s01",
+      "s03",
+      "s04",
+      "s05",
+      "s07",
+      "s10",
+      "s12"
+    ],
+    "output": "deliverables/examples/short_90",
+    "method": "Direct Service call; not HTTP/browser validation"
+  },
+  {
+    "label": "short_60",
+    "actualDurationMs": 58022.0,
+    "plannedDurationMs": 58000.0,
+    "targetMet": true,
+    "blocks": [
+      "s03",
+      "s04",
+      "s05",
+      "s10",
+      "s12"
+    ],
+    "output": "deliverables/examples/short_60",
+    "method": "Direct Service call; not HTTP/browser validation"
+  },
+  {
+    "label": "restored_all",
+    "actualDurationMs": 136588.0,
+    "plannedDurationMs": 136566.66666666666,
+    "targetMet": true,
+    "blocks": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05",
+      "s06",
+      "s07",
+      "s08",
+      "s09",
+      "s10",
+      "s11",
+      "s12",
+      "s13"
+    ],
+    "output": "deliverables/examples/restored_all",
+    "method": "Direct Service call; not HTTP/browser validation"
+  }
+]

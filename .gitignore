@@ -1,0 +1,24 @@
+.env
+.env.*
+!.env.example
+data/
+node_modules/
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+deliverables/*.mp4
+deliverables/*.zip
+deliverables/*.png
+deliverables/*.pdf
+
+fixtures/**/_work/
+fixtures/**/*.mp4
+fixtures/**/*.wav
+
+# Local acceptance captures and runtime receipts (no cookies or logs in Git).
+deliverables/**/*.mp4
+deliverables/**/*.webm
+deliverables/*.log
+deliverables/local_run_receipt.json
+deliverables/browser_failure_report.json

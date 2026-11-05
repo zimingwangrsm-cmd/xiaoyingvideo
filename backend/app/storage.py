@@ -1,11 +1,33 @@
 from pathlib import Path
 import copy
+import fcntl
 import json
 import os
 import re
 import threading
 import uuid
 from contextlib import contextmanager
+
+
+class DataDirectoryLease:
+    """One service process per data directory, released by the OS after a crash."""
+    def __init__(self, root):
+        root = Path(root).resolve()
+        root.mkdir(parents=True, exist_ok=True)
+        self.handle = (root / '.service.lock').open('a+b')
+        try:
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            self.handle.close()
+            raise RuntimeError('数据目录正在由另一个服务使用，请打开已启动的服务，或设置不同的 DATA_DIR。') from None
+        except BaseException:
+            self.handle.close()
+            raise
+
+    def close(self):
+        if not self.handle.closed:
+            fcntl.flock(self.handle.fileno(), fcntl.LOCK_UN)
+            self.handle.close()
 
 
 def new_id():

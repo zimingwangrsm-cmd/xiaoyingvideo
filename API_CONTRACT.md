@@ -32,6 +32,9 @@
 - 错误HTTP 4xx/5xx => {error:{code,message,details?}}；409 revision冲突；404会话不拥有资源；422输入/约束。
 - Cookie匿名会话HttpOnly SameSite=Lax；前端fetch同源携带cookie。localStorage仅存projectId；刷新GET恢复。
 - 前端开始编辑后若revision!=snapshotRevision，旧文件只能查看上一版，当前下载按钮禁用；后端download=1与字幕/record下载也拒绝过期结果。
+- set_target/lock/unlock/delete/restore/restore_all若实际选择完全未变化，返回原revision，不增加撤销历史、不使成片过期。旧expectedRevision仍先返回409。
+- 替换素材尚未ready时，原可编辑项目继续作为刷新恢复点，并提供“返回上一个项目”；新素材ready后才切换持久恢复点。无旧项目时直接恢复新建项目。
+- 同一DATA_DIR只允许一个服务进程持有文件锁；第二实例在恢复未完成任务之前拒绝启动，退出或崩溃后由操作系统释放锁。
 - 模拟失败只在明确开发模式可用：请求头`X-Demo-Fail: render`或`proposal`，且服务器DEMO_TEST_FAILURES=true；默认不显示入口。
 
 ## 分工与文件边界

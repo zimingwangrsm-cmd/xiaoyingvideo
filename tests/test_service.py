@@ -363,3 +363,44 @@ def test_failure_injection_is_ignored_when_developer_flag_is_disabled(app):
     proposal = instance.proposal(owner, project["id"], ProposalRequest(expectedRevision=0, mode="rules"), fail=True)
     assert proposal["source"] == "rules"
     assert completed(app, render(app, project, fail=True))["status"] == "succeeded"
+
+
+def test_second_service_cannot_interrupt_work_in_the_same_data_directory(app, monkeypatch):
+    instance, owner, project = app
+    entered, release = threading.Event(), threading.Event()
+    real_render = service_module.render_spans
+    def wait_for_release(*args, **kwargs):
+        entered.set()
+        assert release.wait(timeout=10)
+        return real_render(*args, **kwargs)
+    monkeypatch.setattr(service_module, 'render_spans', wait_for_release)
+    job = render(app, project)
+    try:
+        assert entered.wait(timeout=5)
+        with pytest.raises(RuntimeError, match='数据目录正在由另一个服务使用'):
+            Service(instance.settings)
+        assert instance.get_job(owner, job['id'])['status'] == 'running'
+    finally:
+        release.set()
+    assert completed(app, job)['status'] == 'succeeded'
+
+
+def test_repeating_current_selection_keeps_revision_history_and_artifact(app):
+    instance, owner, project = app
+    project = action(app, project, 'lock', blockIds=['s01'])
+    project = action(app, project, 'delete', blockIds=['s02'])
+    job = completed(app, render(app, project))
+    before = copy.deepcopy(project)
+    for kind, fields in [
+        ('set_target', {'targetMs': project['edit']['targetMs']}),
+        ('lock', {'blockIds': ['s01']}),
+        ('delete', {'blockIds': ['s02']}),
+        ('restore', {'blockIds': ['s03']}),
+        ('unlock', {'blockIds': ['s03']}),
+    ]:
+        project = action(app, project, kind, **fields)
+        assert project['revision'] == before['revision']
+        assert project['edit'] == before['edit']
+        assert instance.get_job(owner, job['id'])['isCurrent']
+    undone = action(app, project, 'undo')
+    assert 's02' in undone['edit']['keptBlockIds']

@@ -1,7 +1,7 @@
 {
-  "testedAt": "2026-11-05T16:35:34.155Z",
-  "baseUrl": "http://127.0.0.1:8767",
-  "projectId": "6dacd996f08044cd97205f34aa147ca5",
+  "testedAt": "2026-11-05T17:33:40.649Z",
+  "baseUrl": "http://127.0.0.1:8770",
+  "projectId": "18b8bfe1ca4642c4855e64aca71524f6",
   "revision": 15,
   "passed": [
     "persisted cookie ownership",

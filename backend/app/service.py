@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .config import ROOT
 from .media import prepare_source, probe_media, render_spans, sha256_file
-from .storage import Store, atomic_json, new_id
+from .storage import DataDirectoryLease, Store, atomic_json, new_id
 from .suggestions import propose
 from .timeline import build_blocks, build_spans, duration_ms, map_cues, parse_srt, write_srt, write_vtt
 
@@ -26,16 +26,24 @@ class AppError(Exception):
 class Service:
     def __init__(self, settings):
         self.settings = settings
-        self.store = Store(settings.data_dir)
-        self.store.recover_interrupted()
+        self._lease = DataDirectoryLease(settings.data_dir)
+        try:
+            self.store = Store(settings.data_dir)
+            self.store.recover_interrupted()
+        except BaseException:
+            self._lease.close()
+            raise
         self.render_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='koubo-render')
         self.prepare_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='koubo-prepare')
         self.futures = {}
         self.fixture_dir = ROOT / 'fixtures'
 
     def close(self):
-        self.prepare_pool.shutdown(wait=True)
-        self.render_pool.shutdown(wait=True)
+        try:
+            self.prepare_pool.shutdown(wait=True)
+            self.render_pool.shutdown(wait=True)
+        finally:
+            self._lease.close()
 
     def session(self, cookie):
         if self.store.valid_id(cookie):
@@ -276,6 +284,9 @@ class Service:
             if action.type != 'undo':
                 edit['keptBlockIds'] = [bid for bid in valid if bid in kept]
                 edit['lockedBlockIds'] = [bid for bid in valid if bid in locked]
+                if action.type != 'apply_proposal' and all(
+                        edit[key] == before[key] for key in ('targetMs', 'keptBlockIds', 'lockedBlockIds')):
+                    return self.dto(project)
                 if action.type != 'apply_proposal':
                     edit['hasManualEdits'] = True
                 project['_history'].append(before)

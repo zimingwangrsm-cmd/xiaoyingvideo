@@ -2,9 +2,13 @@
 
 独立本地网页，使用原始中文单人口播与SRT，以完整句组删减/恢复并导出真实MP4、SRT和修改记录。不是小影官方上线产品。
 
+## 明天验收
+
+服务端本机入口为 `http://127.0.0.1:8767`。详见 [五分钟验收步骤](deliverables/DEMO_ACCEPTANCE.md) 和 [实现审阅与修复](deliverables/IMPLEMENTATION_REVIEW.md)。同一数据目录只允许一个服务实例；启动脚本每次重建前端。
+
 ## 启动
 
-Python 3.9以上、Node 20以上、FFmpeg/ffprobe。已验证的后端版本见requirements.txt。前端无外部依赖，不需要npm install。
+Linux服务端（Windows可用WSL），Python 3.9以上、Node 20以上、FFmpeg/ffprobe。已验证的后端版本见requirements.txt。前端无外部依赖，不需要npm install。
 
 ```bash
 cd /data1/wzm/wangyi/xiaoying_koubo
@@ -54,7 +58,7 @@ cd frontend && npm run check
 
 ## 当前交付状态
 
-41项后端/媒体/服务层测试和9项前端状态/模板测试已通过。新增真实 HTTP、19组 Chrome 浏览器检查、实际服务重启验收，详见 `deliverables/VALIDATION.md`。171.44秒带播放声音的真实录屏和截图位于本地 `deliverables/`。个人经历一题仍等待用户真实输入。
+43项后端/媒体/服务层测试和9项前端状态/模板测试已通过。最新真实 HTTP、21组 Chrome 浏览器检查、实际服务重启验收，详见 `deliverables/VALIDATION.md`。171.44秒带播放声音的真实录屏和截图位于本地 `deliverables/`。个人经历一题仍等待用户真实输入。
 
 ## HTTP、浏览器与录屏复现
 

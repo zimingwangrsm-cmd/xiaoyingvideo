@@ -1,6 +1,9 @@
 # 口播精简实施进度
 
 ## 当前状态（2026-11-06）
+- 最新复审：修复重复启动干扰任务、无变化操作使成片过期、失败导入丢失原项目入口；启动时重建前端。详见`deliverables/IMPLEMENTATION_REVIEW.md`。
+- 明天验收入口与五分钟操作步骤：`deliverables/DEMO_ACCEPTANCE.md`。正常服务已更新到本轮代码，关闭故障注入。
+- 最新验证：43项Python测试（23.43秒）、9项前端测试、21组真实Chrome检查、HTTP及实际服务重启通过。新增报告位于`deliverables/review/browser_validation.json`。
 - 本轮按要求复用已有工程，没有重开发产品功能。
 - HTTP、真实 Chrome 浏览器、服务停止再启动验收已通过；真实录屏171.44秒、4286帧，带浏览器播放声音，完整性及同步抽查通过，见 `deliverables/recording_validation.json`。
 - 本轮实际服务：`http://127.0.0.1:8767`，数据目录 `data/acceptance_20261106`；默认启动仍用 `scripts/run_demo.sh` 自动选择空闲端口。

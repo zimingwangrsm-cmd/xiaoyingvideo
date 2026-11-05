@@ -22,3 +22,5 @@ deliverables/**/*.webm
 deliverables/*.log
 deliverables/local_run_receipt.json
 deliverables/browser_failure_report.json
+
+deliverables/**/*.png

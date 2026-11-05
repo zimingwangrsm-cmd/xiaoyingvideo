@@ -3,7 +3,7 @@ import { renderView } from './views.js';
 
 const app = document.getElementById('app');
 const state = {
-  loading: true, health: null, samples: [], project: null, view: 'start',
+  loading: true, health: null, samples: [], project: null, previousProject: null, view: 'start',
   files: { video: null, subtitles: null }, busy: '', proposalPending: false,
   proposal: null, job: null, notice: null, retry: null,
   onlyDeleted: false, allowOver: false, activeBlock: null, playheadMs: 0, targetDraft: '',
@@ -76,6 +76,7 @@ function setProject(next, isNew = false) {
   if (!isNew && !acceptProjectUpdate(state.project, next)) return false;
   const previous = state.project;
   if (isNew) {
+    if (next.state !== 'ready' && previous?.state === 'ready') state.previousProject = previous;
     projectEpoch++;
     jobEpoch++;
     clearTimeout(projectTimer); clearTimeout(jobTimer);
@@ -88,7 +89,9 @@ function setProject(next, isNew = false) {
     state.targetDraft = next.edit && ![30000, 60000, 90000].includes(next.edit.targetMs) ? String(next.edit.targetMs / 1000) : '';
   }
   state.project = next;
-  persistProjectId(next.id);
+  // Keep the last usable project recoverable until replacement media is ready.
+  if (next.state === 'ready') state.previousProject = null;
+  if (!state.previousProject) persistProjectId(next.id);
   return true;
 }
 
@@ -256,6 +259,16 @@ app.addEventListener('click', async event => {
     case 'start-sample': await createSample(); break;
     case 'new-project': state.view = 'start'; state.notice = null; draw(); window.scrollTo(0, 0); break;
     case 'resume-project': case 'back-editor': state.view = 'editor'; state.notice = null; draw(); window.scrollTo(0, 0); break;
+    case 'previous-project': {
+      const previous = state.previousProject;
+      if (!previous || state.busy) break;
+      setProject(previous, true); state.view = 'editor'; state.notice = null;
+      draw(); window.scrollTo(0, 0);
+      try { await refreshProject(previous.id); draw(); }
+      catch (error) { await handleFailure(error, () => refreshProject(previous.id), previous.id); draw(); }
+      if (state.project?.latestRenderId) pollJob(state.project.latestRenderId, true);
+      break;
+    }
     case 'dismiss-notice': state.notice = null; state.retry = null; draw(); break;
     case 'retry-operation': {
       const retry = state.retry; state.notice = null; state.retry = null; draw();

@@ -2,7 +2,7 @@
 
 ## V2更新
 
-截图的公开上传正在等待用户确认；GitHub先同步代码与报告正文。完整PDF/HTML、截图、视频和交付包已保存在本地`deliverables/v2/`。
+GitHub版本包含源码、报告正文和公开截图。完整PDF/HTML、视频和交付包保存在本地`deliverables/v2/`。
 
 已新增本机自动字幕、字幕/词语校对、口误备注、真实剪词、整句重排、人工补录、人声分离和本地模型逐项建议。使用与安装见[README_V2.md](README_V2.md)，[新版验收步骤](deliverables/v2/ACCEPTANCE_GUIDE.md)，[完整图文报告](deliverables/v2/PRODUCT_REPORT.md)。下面保留V1基础运行说明；V2的字幕文件为可选。
 

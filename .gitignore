@@ -24,3 +24,16 @@ deliverables/local_run_receipt.json
 deliverables/browser_failure_report.json
 
 deliverables/**/*.png
+
+# V2 local model/runtime caches
+.venv-v2/
+models/
+deliverables/**/*.pdf
+deliverables/**/*.zip
+deliverables/**/*.log
+
+frontend/dist-v2/
+fixtures/**/*.jpg
+
+deliverables/**/*.html
+fixtures/**/*.log

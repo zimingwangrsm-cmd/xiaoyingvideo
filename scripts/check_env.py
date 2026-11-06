@@ -27,7 +27,7 @@ except RuntimeError:
     data_available = False
 report = {'python': platform.python_version(), 'packages': versions, 'tools': tools,
           'mode': settings.mode, 'allowUploads': settings.allow_uploads,
-          'suggestionMode': 'llm' if settings.model_available else 'rules',
+          'suggestionMode': 'local_llm' if settings.local_llm_url else 'llm' if settings.model_available else 'rules',
           'sampleReady': (ROOT/'fixtures/interview_intro_v1/canonical.mp4').is_file(),
           'dataDirectoryAvailable': data_available}
 print(json.dumps(report, ensure_ascii=False, indent=2))

@@ -8,7 +8,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def _dotenv():
     path = ROOT / '.env'
     allowed = {'APP_MODE', 'ALLOW_UPLOADS', 'DATA_DIR', 'MAX_UPLOAD_MB', 'MAX_SOURCE_SECONDS',
-               'MODEL_MODE', 'MODEL_BASE_URL', 'MODEL_NAME', 'MODEL_API_KEY', 'DEMO_TEST_FAILURES'}
+               'MODEL_MODE', 'MODEL_BASE_URL', 'MODEL_NAME', 'MODEL_API_KEY', 'DEMO_TEST_FAILURES',
+               'SPEECH_PYTHON', 'ASR_MODEL', 'LOCAL_LLM_URL', 'FRONTEND_DIST'}
     if path.is_file():
         for line in path.read_text(encoding='utf-8').splitlines():
             line = line.strip()
@@ -31,6 +32,10 @@ class Settings:
     model_name: str = ''
     model_api_key: str = ''
     test_failures: bool = False
+    speech_python: str = str(ROOT / '.venv-v2' / 'bin' / 'python')
+    asr_model: str = str(ROOT / 'models' / 'faster-whisper-medium')
+    local_llm_url: str = ''
+    frontend_dist: str = str(ROOT / 'frontend' / 'dist')
 
     @property
     def model_available(self):
@@ -50,4 +55,8 @@ def settings_from_env():
         model_mode=os.getenv('MODEL_MODE', 'auto'), model_base_url=os.getenv('MODEL_BASE_URL', ''),
         model_name=os.getenv('MODEL_NAME', ''), model_api_key=os.getenv('MODEL_API_KEY', ''),
         test_failures=os.getenv('DEMO_TEST_FAILURES', 'false').lower() == 'true',
+        speech_python=os.getenv('SPEECH_PYTHON') or str(ROOT/'.venv-v2/bin/python'),
+        asr_model=os.getenv('ASR_MODEL') or str(ROOT/'models/faster-whisper-medium'),
+        local_llm_url=os.getenv('LOCAL_LLM_URL', ''),
+        frontend_dist=os.getenv('FRONTEND_DIST', str(ROOT/'frontend/dist')),
     )

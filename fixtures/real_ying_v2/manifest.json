@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "id": "real_ying_v2",
+  "title": "真人口播：Ying介绍家乡语言",
+  "description": "公开授权真人中文口播；本机自动识别字幕，可校对、剪词和整句重排。",
+  "origin": "recorded_sample",
+  "label": "真人口播 · 本机识别字幕",
+  "videoFile": "canonical.mp4",
+  "subtitleFile": "sample.srt",
+  "sourceSha256": "9382aec2d8e4789e93b239c731d37bda9c4be9411e57ff66d9326f45a1594815",
+  "transcriptSha256": "9aeb7c6f106e967b6aaba3c2e560aa3575cd42423ea5101142f3f652681b7d3d",
+  "durationMs": 150000.0,
+  "totalFrames": 4500,
+  "author": "Wikitongues, Ying Li",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:WIKITONGUES-_Ying_speaking_Henan_Chinese.webm",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "licenseNote": "保留署名、来源与许可；截取/转换后的媒体及其剪辑衍生内容沿用CC BY-SA 4.0。无原作者背书。",
+  "changes": "转为H.264/AAC、30fps/48kHz；采用开头150.0秒；自动生成简体中文字幕。",
+  "transcriptVerified": false,
+  "transcriptReview": "Automatic recognition; requires creator review.",
+  "recommendedLockedIds": [],
+  "asr": {
+    "language": "zh",
+    "engine": "faster-whisper",
+    "model": "medium",
+    "device": "cpu",
+    "computeType": "int8",
+    "transcriptVerified": false,
+    "elapsedSeconds": 38.514
+  }
+}

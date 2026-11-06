@@ -6,9 +6,11 @@ const state = {
   loading: true, health: null, samples: [], project: null, previousProject: null, view: 'start',
   files: { video: null, subtitles: null }, busy: '', proposalPending: false,
   proposal: null, job: null, notice: null, retry: null,
+  selectedSampleId: '', separateVoice: false, processingJob: null, proposalV2: null,
+  refineBlock: null, selectedWordIds: [], refineDrafts: {}, recordingFile: null, keepBackground: false, editorStage: 'edit',
   onlyDeleted: false, allowOver: false, activeBlock: null, playheadMs: 0, targetDraft: '',
 };
-let projectTimer, jobTimer, projectEpoch = 0, jobEpoch = 0;
+let projectTimer, jobTimer, processingTimer, projectEpoch = 0, jobEpoch = 0;
 let autoShowJob = null;
 const wiredVideos = new WeakSet();
 
@@ -79,7 +81,8 @@ function setProject(next, isNew = false) {
     if (next.state !== 'ready' && previous?.state === 'ready') state.previousProject = previous;
     projectEpoch++;
     jobEpoch++;
-    clearTimeout(projectTimer); clearTimeout(jobTimer);
+    clearTimeout(projectTimer); clearTimeout(jobTimer); clearTimeout(processingTimer);
+    state.processingJob=null; state.proposalV2=null; state.refineBlock=null; state.selectedWordIds=[];
     state.proposal = null; state.job = null; state.proposalPending = false;
     state.activeBlock = null; state.playheadMs = 0; state.onlyDeleted = false;
     autoShowJob = null;
@@ -171,10 +174,11 @@ async function mutate(action) {
 }
 
 async function createSample() {
-  if (state.busy || !state.samples[0]) return;
+  const sample = state.samples.find(item=>item.id===state.selectedSampleId) || state.samples[0];
+  if (state.busy || !sample) return;
   state.busy = 'sample'; state.notice = null; draw();
   try {
-    const next = await request('/api/projects/from-sample', { method: 'POST', body: { sampleId: state.samples[0].id }, timeout: 120000 });
+    const next = await request('/api/projects/from-sample', { method: 'POST', body: { sampleId: sample.id }, timeout: 120000 });
     setProject(next, true); state.view = 'editor'; window.scrollTo(0, 0); pollPreparing();
   } catch (error) { await handleFailure(error, createSample); }
   finally { state.busy = ''; draw(); }
@@ -183,11 +187,11 @@ async function createSample() {
 async function importFiles() {
   if (state.busy) return;
   const { video, subtitles } = state.files;
-  if (!video || !subtitles) { showNotice('请同时选择 MP4 视频和对应的 SRT 字幕。'); draw(); return; }
+  if (!video) { showNotice('请选择 MP4 视频。可以不提供字幕，由本机自动识别。'); draw(); return; }
   if (!/\.mp4$/i.test(video.name)) { showNotice('当前支持 MP4 视频，请换一个文件。'); draw(); return; }
-  if (!/\.srt$/i.test(subtitles.name)) { showNotice('请提供一份与原片对应的 SRT 字幕。'); draw(); return; }
+  if (subtitles && !/\.srt$/i.test(subtitles.name)) { showNotice('请提供一份与原片对应的 SRT 字幕。'); draw(); return; }
   if (video.size > 100 * 1024 * 1024) { showNotice('视频超过 100 MB，请选择更小的 MP4 文件。'); draw(); return; }
-  const form = new FormData(); form.append('video', video); form.append('subtitles', subtitles);
+  const form = new FormData(); form.append('video', video); if (subtitles) form.append('subtitles', subtitles); form.append('separateVoice', String(state.separateVoice));
   state.busy = 'import'; state.notice = null; draw();
   try {
     const next = await request('/api/projects/import', { method: 'POST', body: form, timeout: 180000 });
@@ -197,6 +201,7 @@ async function importFiles() {
 }
 
 async function propose(mode = 'auto') {
+  if (mode === 'auto' && state.project?.capabilities?.localSuggestions) { await startProcessing('suggestions'); return; }
   if (!state.project || state.proposalPending || state.busy) return;
   const id = state.project.id, epoch = projectEpoch, revision = state.project.revision;
   state.proposalPending = true; state.notice = null; draw();
@@ -269,6 +274,37 @@ app.addEventListener('click', async event => {
       if (state.project?.latestRenderId) pollJob(state.project.latestRenderId, true);
       break;
     }
+    case 'stage-proof': state.editorStage='proof'; state.refineBlock=state.project.blocks[0]?.id; state.selectedWordIds=[];draw(); break;
+    case 'stage-edit': state.editorStage='edit'; draw(); break;
+    case 'refine': state.refineBlock=id; state.selectedWordIds=[]; state.recordingFile=null; draw(); break;
+    case 'close-refine': state.refineBlock=null; state.selectedWordIds=[]; draw(); break;
+    case 'select-word': {
+      const wid=target.dataset.word;
+      state.selectedWordIds=state.selectedWordIds.includes(wid)?state.selectedWordIds.filter(i=>i!==wid):[...state.selectedWordIds,wid];draw();break;
+    }
+    case 'delete-selected-words': case 'restore-selected-words':
+      await mutate({type:action==='delete-selected-words'?'delete_words':'restore_words',wordIds:state.selectedWordIds});break;
+    case 'seek-selected-word': {
+      const word=state.project.words.find(w=>w.id===state.selectedWordIds[0]);
+      state.refineBlock=null;draw();const v=document.getElementById('source-video');
+      if(word&&v){v.currentTime=word.startMs/1000;v.play().catch(()=>{});}break;
+    }
+    case 'move-up': case 'move-down': await mutate({type:'move_block',blockId:id,direction:action==='move-up'?-1:1});break;
+    case 'clear-caption': await mutate({type:'correct_caption',blockId:state.refineBlock,text:''});state.refineDrafts={};draw();break;
+    case 'clear-rewrite': await mutate({type:'set_rewrite',blockId:state.refineBlock,text:''});state.refineDrafts={};draw();break;
+    case 'restore-audio': await mutate({type:'restore_audio',blockId:state.refineBlock});state.refineDrafts={};draw();break;
+    case 'retry-import': {
+      try { const p=await request(`/api/projects/${state.project.id}/retry-import`,{method:'POST',body:{expectedRevision:state.project.revision}});setProject(p);draw();pollPreparing(); }
+      catch(error){await handleFailure(error,null,state.project.id);draw();}break;
+    }
+    case 'transcribe': await startProcessing('transcribe');break;
+    case 'separate': await startProcessing('separate');break;
+    case 'retry-processing': await startProcessing(state.processingJob.kind);break;
+    case 'confirm-transcript': await confirmProcessing('transcript');break;
+    case 'confirm-recording': await confirmProcessing('recordings');break;
+    case 'accept-item': case 'reject-item': await decideProposal([target.dataset.item],action==='accept-item'?'accept':'reject');break;
+    case 'accept-all': await decideProposal(state.proposalV2.items.filter(i=>i.status==='pending').map(i=>i.id),'accept');break;
+    case 'dismiss-v2-proposal': state.proposalV2=null;draw();break;
     case 'dismiss-notice': state.notice = null; state.retry = null; draw(); break;
     case 'retry-operation': {
       const retry = state.retry; state.notice = null; state.retry = null; draw();
@@ -294,6 +330,16 @@ app.addEventListener('click', async event => {
 app.addEventListener('submit', async event => {
   event.preventDefault();
   if (event.target.id === 'import-form') await importFiles();
+  const forms={'caption-edit-form':['correct_caption','caption'],'note-form':['annotate','note'],'rewrite-form':['set_rewrite','rewrite']};
+  if(forms[event.target.id]) {
+    const [type,field]=forms[event.target.id];const text=event.target.elements[field].value;
+    await mutate({type,blockId:state.refineBlock,text});state.refineDrafts={};draw();
+  }
+  if(event.target.id==='word-edit-form' && state.selectedWordIds.length===1) {
+    await mutate({type:'correct_word',wordId:state.selectedWordIds[0],text:event.target.elements.wordText.value});
+    state.refineDrafts={};draw();
+  }
+  if(event.target.id==='recording-form') await uploadRecording();
   if (event.target.id === 'target-form') {
     const input = event.target.elements.target;
     const value = Number(input.value);
@@ -307,14 +353,85 @@ app.addEventListener('submit', async event => {
 
 app.addEventListener('input', event => {
   if (event.target.id === 'target-seconds') state.targetDraft = event.target.value;
+  if(state.refineBlock && ['caption','note','rewrite','wordText'].includes(event.target.name)) {
+    state.refineDrafts[state.refineBlock] ||= {};state.refineDrafts[state.refineBlock][event.target.name]=event.target.value;
+  }
 });
 
 app.addEventListener('change', event => {
   const input = event.target;
+  if(input.id==='sample-picker'){state.selectedSampleId=input.value;draw();return;}
+  if(['separate-import','separate-voice'].includes(input.id)){state.separateVoice=input.checked;return;}
+  if(input.name==='recording'){state.recordingFile=input.files[0]||null;return;}
+  if(input.name==='keepBackground'){state.keepBackground=input.checked;return;}
   if (input.type === 'file' && ['video', 'subtitles'].includes(input.name)) { state.files[input.name] = input.files[0] || null; state.notice = null; draw(); }
   else if (input.id === 'only-deleted') { state.onlyDeleted = input.checked; draw(); }
   else if (input.id === 'allow-over') { state.allowOver = input.checked; draw(); }
 });
+
+async function startProcessing(kind) {
+  if(!state.project || state.busy || ['queued','running'].includes(state.processingJob?.status))return;
+  const pid=state.project.id;state.busy='processing';state.notice=null;
+  if(kind==='suggestions')state.proposalPending=true;
+  draw();
+  try {
+    const job=await request(`/api/projects/${pid}/processing/${kind}`,{method:'POST',body:{expectedRevision:state.project.revision,separateVoice:state.separateVoice}});
+    if(state.project?.id===pid){state.processingJob=job;pollProcessing(job.id,true);}
+  } catch(error){state.proposalPending=false;await handleFailure(error,()=>startProcessing(kind),pid);}
+  finally{state.busy='';draw();}
+}
+
+function pollProcessing(jid,immediate=false) {
+  clearTimeout(processingTimer);
+  const pid=state.project?.id,epoch=projectEpoch;
+  processingTimer=setTimeout(async()=>{
+    try {
+      const job=await request(`/api/processing-jobs/${jid}`,{timeout:15000});
+      if(epoch!==projectEpoch || state.project?.id!==pid)return;
+      state.processingJob=job;
+      if(job.status==='succeeded') {
+        if(job.kind==='suggestions'){state.proposalV2=job.result;state.proposalPending=false;}
+        if(job.kind==='separate')await refreshProject(pid);
+      }
+      if(['failed','interrupted'].includes(job.status))state.proposalPending=false;
+      draw();
+      if(['queued','running'].includes(job.status))pollProcessing(jid);
+    }catch(error){if(epoch!==projectEpoch)return;state.proposalPending=false;showNotice(error.message,'error',()=>pollProcessing(jid,true));draw();}
+  },immediate?0:1000);
+}
+
+async function confirmProcessing(kind) {
+  if(state.busy||!state.processingJob)return;
+  const pid=state.project.id;state.busy='edit';draw();
+  try {
+    const p=await request(`/api/projects/${pid}/${kind}/confirm`,{method:'POST',body:{expectedRevision:state.project.revision,jobId:state.processingJob.id}});
+    setProject(p);state.processingJob=null;state.refineDrafts={};state.selectedWordIds=[];state.proposalV2=null;
+    showNotice(kind==='transcript'?'识别稿已确认，可以校对和按词精剪。':'补录已应用，请生成短片检查声音和字幕。','success');
+  }catch(error){await handleFailure(error,()=>confirmProcessing(kind),pid);}
+  finally{state.busy='';draw();}
+}
+
+async function decideProposal(itemIds,decision) {
+  if(state.busy||!itemIds.length)return;
+  const pid=state.project.id;state.busy='edit';draw();
+  try {
+    const result=await request(`/api/projects/${pid}/proposal-decisions`,{method:'POST',body:{expectedRevision:state.project.revision,proposalId:state.proposalV2.id,itemIds,decision}});
+    setProject(result.project);state.proposalV2=result.proposal;
+  }catch(error){await handleFailure(error,()=>decideProposal(itemIds,decision),pid);}
+  finally{state.busy='';draw();}
+}
+
+async function uploadRecording() {
+  if(state.busy||!state.recordingFile){showNotice('请选择WAV、MP3或M4A补录文件。');draw();return;}
+  const pid=state.project.id,form=new FormData();form.append('audio',state.recordingFile);
+  form.append('expectedRevision',state.project.revision);form.append('blockId',state.refineBlock);form.append('keepBackground',String(state.keepBackground));
+  state.busy='recording';draw();
+  try {
+    const job=await request(`/api/projects/${pid}/recordings`,{method:'POST',body:form,timeout:120000});
+    state.processingJob=job;state.refineBlock=null;state.recordingFile=null;pollProcessing(job.id,true);
+  }catch(error){await handleFailure(error,uploadRecording,pid);}
+  finally{state.busy='';draw();}
+}
 
 async function boot() {
   state.loading = true; state.notice = null; draw();
@@ -331,6 +448,7 @@ async function boot() {
       setProject(p, true); state.view = 'editor';
       pollPreparing();
       if (p.latestRenderId) pollJob(p.latestRenderId, true);
+      if (p.latestProcessingId) pollProcessing(p.latestProcessingId, true);
     } catch (error) {
       if (error.status === 404) {
         try { localStorage.removeItem(STORAGE_KEY); } catch { /* Storage is optional. */ }

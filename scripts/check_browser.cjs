@@ -41,8 +41,10 @@ function pass(name, details = {}) { checks.push({ name, ...details }); console.l
   try {
     await page.goto(base);
     await page.locator('[data-action="start-sample"]').waitFor();
+    if(await page.locator('#sample-picker').count()) await page.locator('#sample-picker').selectOption('interview_intro_v1');
     await screenshot('browser_start');
     const created = page.waitForResponse(r => r.url().endsWith('/from-sample'));
+    if(await page.locator('#sample-picker').count()) await page.locator('#sample-picker').selectOption('interview_intro_v1');
     await page.locator('[data-action="start-sample"]').click();
     project = await (await created).json();
     await page.locator('#source-video').waitFor();
@@ -141,7 +143,9 @@ function pass(name, details = {}) { checks.push({ name, ...details }); console.l
     assert.equal(project.revision, completedRevision);
     await page.locator('[data-action="show-result"]').first().click();
     await page.getByText('短片已准备好', { exact: true }).waitFor();
-    assert.equal(await page.locator('[data-download]').count(), 3);
+    assert(await page.locator('[data-download="mp4"]').isVisible());
+    assert(await page.locator('[data-download="srt"]').isVisible());
+    assert(await page.locator('[data-download="record"]').isVisible());
     pass('reselecting current target retains current artifact and downloads');
     await page.locator('[data-action="back-editor"]').click();
     const restoreId = project.blocks.find(b => !project.edit.keptBlockIds.includes(b.id)).id;
@@ -172,6 +176,7 @@ function pass(name, details = {}) { checks.push({ name, ...details }); console.l
     // Additional edge cases in a separate project, leaving the recorded project recoverable.
     await page.locator('[data-action="new-project"]').click();
     const nextCreated = page.waitForResponse(r => r.url().endsWith('/from-sample'));
+    if(await page.locator('#sample-picker').count()) await page.locator('#sample-picker').selectOption('interview_intro_v1');
     await page.locator('[data-action="start-sample"]').click();
     project = await (await nextCreated).json();
     await page.locator('#source-video').waitFor();

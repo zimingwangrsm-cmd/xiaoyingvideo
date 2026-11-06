@@ -1,7 +1,7 @@
 export const STORAGE_KEY = 'koubo.projectId';
 
 export const sourceLabels = {
-  manual: '手动精简', rules: '规则建议', llm: 'AI 建议', auto: 'AI / 规则建议', precomputed: '预计算样例建议',
+  manual: '手动精简', local_llm: '本地模型建议', rules: '规则建议', llm: 'AI 建议', auto: 'AI / 规则建议', precomputed: '预计算样例建议',
 };
 
 export function escapeHtml(value) {
@@ -76,4 +76,12 @@ export async function request(path, { method = 'GET', body, timeout = 45000 } = 
   } finally {
     clearTimeout(timer);
   }
+}
+
+export function currentBlockText(project, block) {
+  if(project.edit.captionEdits?.[block.id])return project.edit.captionEdits[block.id];
+  const all=(project.words||[]).filter(w=>w.blockId===block.id);
+  if(!all.length)return block.text;
+  const deleted=new Set(project.edit.deletedWordIds||[]);
+  return all.filter(w=>!deleted.has(w.id)).map(w=>project.edit.wordEdits?.[w.id]??w.text).join('').trim() || '（本段词语已全部删除）';
 }

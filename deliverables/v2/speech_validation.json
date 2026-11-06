@@ -1,0 +1,37 @@
+{
+  "realTranscriptions": [
+    {
+      "sampleId": "real_tao_v2",
+      "seconds": 28.92,
+      "cueCount": 37,
+      "rawWordUnits": 296,
+      "engine": "faster-whisper",
+      "model": "medium",
+      "device": "cpu",
+      "transcriptVerified": false
+    },
+    {
+      "sampleId": "real_ying_v2",
+      "seconds": 38.514,
+      "cueCount": 41,
+      "rawWordUnits": 487,
+      "engine": "faster-whisper",
+      "model": "medium",
+      "device": "cpu",
+      "transcriptVerified": false
+    }
+  ],
+  "instrumentalOnly": {
+    "durationSeconds": 20,
+    "result": "No usable speech detected; worker exited 1 without producing captions",
+    "method": "Locally generated instrumental chord, actual VAD + medium inference"
+  },
+  "separationSmoke": {
+    "vocals": "data/v2_sources/stems/htdemucs/tao_24s/vocals.wav",
+    "background": "data/v2_sources/stems/htdemucs/tao_24s/no_vocals.wav",
+    "engine": "htdemucs",
+    "elapsedSeconds": 13.435
+  },
+  "note": "No mocked inference in this report. Dialect/proper-name errors remain for creator correction.",
+  "pureMusicError": "没有识别到可用的中文口播"
+}

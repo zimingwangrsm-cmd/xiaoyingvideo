@@ -1,0 +1,76 @@
+{
+  "sourceCredit": "Wikitongues, Ying Li; CC BY-SA 4.0; licensed 18-second excerpt, transcoded and edited; no endorsement",
+  "recordedAt": "2026-11-06T08:06:22.345Z",
+  "baseUrl": "http://127.0.0.1:8770",
+  "browser": "157.0.8103.38",
+  "durationSeconds": 171.04,
+  "capturedFrames": 4276,
+  "meanVolumeDb": -33.9,
+  "method": "Continuous Xvfb desktop capture with FFmpeg x11grab + isolated PulseAudio sink monitor; no cuts or intentional speed changes; captured audio timestamps normalized with aresample; original video bitstream copied",
+  "audio": "Actual browser source/result playback; no microphone narration or replacement soundtrack",
+  "video": "walkthrough.mp4",
+  "projectId": "b596d148accc483483afac7d259c4850",
+  "finalPlannedDurationMs": 6633.333333333333,
+  "renderReadyAtSeconds": 140.809,
+  "steps": [
+    {
+      "second": 0.002,
+      "text": "真人样例与无字幕导入入口"
+    },
+    {
+      "second": 6,
+      "text": "打开公开授权真人样例"
+    },
+    {
+      "second": 16.001,
+      "text": "导入真实视频片段，不提供SRT"
+    },
+    {
+      "second": 40.144,
+      "text": "自动字幕已生成，打开精修面板"
+    },
+    {
+      "second": 52,
+      "text": "在另一段中按实测时间剪词"
+    },
+    {
+      "second": 65,
+      "text": "整句移动，音视频和字幕按同一顺序调整"
+    },
+    {
+      "second": 75,
+      "text": "设置10秒目标并请求本地模型建议"
+    },
+    {
+      "second": 110.001,
+      "text": "查看整体方针和逐项理由，确认其中一项"
+    },
+    {
+      "second": 123,
+      "text": "人工确认保留内容，使时长达到目标"
+    },
+    {
+      "second": 137.001,
+      "text": "生成实际MP4，保留真实渲染等待"
+    },
+    {
+      "second": 150,
+      "text": "播放实际精简结果和同步字幕"
+    },
+    {
+      "second": 157,
+      "text": "下载MP4、SRT和可交接ZIP"
+    },
+    {
+      "second": 169,
+      "text": "流程完成：真人素材、真实识别、真实模型建议与导出"
+    }
+  ],
+  "downloads": {
+    "mp4": "walkthrough_download.mp4",
+    "srt": "walkthrough_download.srt",
+    "bundle": "walkthrough_handoff.zip"
+  },
+  "sha256": "fccf5d72e75c873dac36ac2537b1716c54184e949c13122b1ea3066c55934767",
+  "note": "Latest recording includes schema-constrained local model proposals and real acceptance of a valid item. Video bitstream preserved; audio timestamps normalized."
+}

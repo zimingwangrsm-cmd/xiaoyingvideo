@@ -9,6 +9,7 @@ def select_port(first, attempts=20):
         raise ValueError('端口应在1024至65535之间。')
     for port in range(first, min(65536, first + attempts)):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as candidate:
+            candidate.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             try:
                 candidate.bind(('127.0.0.1', port))
             except OSError as exc:

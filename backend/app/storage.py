@@ -54,7 +54,7 @@ class Store:
         self.root = Path(root).resolve()
         self.guard = threading.RLock()
         self.locks = {}
-        for name in ['projects', 'jobs', 'artifacts', 'sessions']:
+        for name in ['projects', 'jobs', 'artifacts', 'sessions', 'processing']:
             (self.root / name).mkdir(parents=True, exist_ok=True)
 
     @staticmethod
@@ -62,7 +62,7 @@ class Store:
         return isinstance(value, str) and bool(re.fullmatch(r'[a-f0-9]{32}', value))
 
     def path(self, kind, key):
-        if kind not in ['projects', 'jobs', 'artifacts', 'sessions'] or not self.valid_id(key):
+        if kind not in ['projects', 'jobs', 'artifacts', 'sessions', 'processing'] or not self.valid_id(key):
             raise KeyError(key)
         return self.root / kind / key / 'state.json' if kind == 'projects' else self.root / kind / (key + '.json')
 
@@ -92,6 +92,11 @@ class Store:
         return data
 
     def recover_interrupted(self):
+        for path in (self.root / 'processing').glob('*.json'):
+            data = json.loads(path.read_text(encoding='utf-8'))
+            if data.get('status') in ['queued', 'running']:
+                data.update(status='interrupted', error='上次处理被中断，原项目已保留，可重新发起。')
+                atomic_json(path, data)
         for path in (self.root / 'jobs').glob('*.json'):
             data = json.loads(path.read_text(encoding='utf-8'))
             if data.get('status') in ['queued', 'running']:

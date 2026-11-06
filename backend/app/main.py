@@ -5,13 +5,14 @@ import shutil
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Request, UploadFile
+from fastapi import FastAPI, File, Form, Request, UploadFile
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .config import ROOT, Settings, settings_from_env
-from .schemas import ActionRequest, ProposalRequest, RenderRequest, SampleRequest
+from .schemas import (ActionRequest, ProposalRequest, RenderRequest, SampleRequest,
+                      ProcessingRequest, ConfirmProcessingRequest, ProposalDecisionRequest)
 from .service import AppError, Service
 
 COOKIE = 'koubo_session'
@@ -102,23 +103,75 @@ def create_app(settings: Optional[Settings] = None):
     def health():
         return {'status': 'ok', 'mediaAvailable': bool(shutil.which('ffmpeg') and shutil.which('ffprobe')),
                 'mode': settings.mode, 'allowUploads': settings.allow_uploads,
-                'suggestionMode': 'llm' if settings.model_available else 'rules'}
+                'suggestionMode': 'local_llm' if settings.local_llm_url else 'llm' if settings.model_available else 'rules',
+                'capabilities': service.capabilities(), 'version': 2}
 
     @app.get('/api/samples')
     def samples():
         return {'samples': service.list_samples()}
+
+    @app.get('/api/samples/{sid}/poster')
+    def sample_poster(sid: str):
+        if sid not in {item['id'] for item in service.list_samples()} or '/' in sid or '\\' in sid:
+            raise AppError('not_found', '找不到样例。', 404)
+        path = service.fixture_dir / sid / 'poster.jpg'
+        if not path.is_file(): raise AppError('not_found', '样例没有封面。', 404)
+        return FileResponse(path, media_type='image/jpeg')
 
     @app.post('/api/projects/from-sample', status_code=201)
     def from_sample(body: SampleRequest, request: Request):
         return service.from_sample(request.state.owner, body.sampleId)
 
     @app.post('/api/projects/import', status_code=202)
-    def import_project(request: Request, video: UploadFile = File(...), subtitles: UploadFile = File(...)):
+    def import_project(request: Request, video: UploadFile = File(...), subtitles: Optional[UploadFile] = File(None),
+                       separateVoice: bool = Form(False)):
         try:
-            return service.import_files(request.state.owner, video, subtitles)
+            return service.import_files(request.state.owner, video, subtitles, separateVoice)
         finally:
             video.file.close()
-            subtitles.file.close()
+            if subtitles is not None: subtitles.file.close()
+
+    @app.post('/api/projects/{pid}/processing/{kind}', status_code=202)
+    def processing(pid: str, kind: str, body: ProcessingRequest, request: Request):
+        if kind not in ['transcribe', 'separate', 'suggestions']:
+            raise AppError('invalid_processing', '不支持的处理任务。')
+        return service.start_processing(request.state.owner, pid, body, kind)
+
+    @app.get('/api/processing-jobs/{jid}')
+    def processing_job(jid: str, request: Request):
+        return service.get_processing(request.state.owner, jid)
+
+    @app.post('/api/projects/{pid}/transcript/confirm')
+    def confirm_transcript(pid: str, body: ConfirmProcessingRequest, request: Request):
+        return service.confirm_transcript(request.state.owner, pid, body)
+
+    @app.post('/api/projects/{pid}/proposal-decisions')
+    def decide_proposal(pid: str, body: ProposalDecisionRequest, request: Request):
+        return service.decide_proposal(request.state.owner, pid, body)
+
+    @app.post('/api/projects/{pid}/recordings', status_code=202)
+    def recording(pid: str, request: Request, audio: UploadFile = File(...),
+                  expectedRevision: int = Form(...), blockId: str = Form(...), keepBackground: bool = Form(False)):
+        try:
+            return service.upload_recording(request.state.owner, pid, expectedRevision, blockId, audio, keepBackground)
+        finally:
+            audio.file.close()
+
+    @app.post('/api/projects/{pid}/recordings/confirm')
+    def confirm_recording(pid: str, body: ConfirmProcessingRequest, request: Request):
+        return service.confirm_recording(request.state.owner, pid, body)
+
+    @app.get('/api/projects/{pid}/audio/{kind}')
+    def audio_track(pid: str, kind: str, request: Request):
+        return FileResponse(service.audio_path(request.state.owner, pid, kind), media_type='audio/wav')
+
+    @app.get('/api/projects/{pid}/recordings/{rid}/audio')
+    def recording_audio(pid: str, rid: str, request: Request):
+        return FileResponse(service.audio_path(request.state.owner, pid, 'recording', rid), media_type='audio/wav')
+
+    @app.post('/api/projects/{pid}/retry-import')
+    def retry_import(pid: str, body: ProcessingRequest, request: Request):
+        return service.retry_import(request.state.owner, pid, body.expectedRevision)
 
     @app.get('/api/projects/{pid}')
     def project(pid: str, request: Request):
@@ -150,6 +203,12 @@ def create_app(settings: Optional[Settings] = None):
             raise AppError('invalid_format', '原片预览字幕使用 VTT 格式。')
         return FileResponse(service.source_path(request.state.owner, pid, 'vtt'), media_type='text/vtt; charset=utf-8')
 
+    @app.get('/api/projects/{pid}/source/poster')
+    def source_poster(pid: str, request: Request):
+        path = service.source_path(request.state.owner, pid, 'poster')
+        if not path.is_file(): raise AppError('not_found', '封面尚未准备好。', 404)
+        return FileResponse(path, media_type='image/jpeg')
+
     @app.api_route('/api/artifacts/{aid}/video', methods=['GET', 'HEAD'])
     def video(aid: str, request: Request, download: int = 0):
         return media_response(service.artifact_path(request.state.owner, aid, 'video', bool(download)), request, bool(download))
@@ -167,7 +226,11 @@ def create_app(settings: Optional[Settings] = None):
         return FileResponse(service.artifact_path(request.state.owner, aid, 'record'),
                             media_type='application/json', filename='koubo_record.json')
 
-    dist = ROOT / 'frontend' / 'dist'
+    @app.get('/api/artifacts/{aid}/bundle')
+    def bundle(aid: str, request: Request):
+        return FileResponse(service.bundle_path(request.state.owner, aid), media_type='application/zip', filename='koubo_handoff.zip')
+
+    dist = Path(settings.frontend_dist)
     assets = dist / 'assets'
     if assets.is_dir():
         app.mount('/assets', StaticFiles(directory=assets), name='assets')

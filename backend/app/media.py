@@ -219,3 +219,42 @@ def sha256_file(path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def render_edit(source_path, spans, recordings, output_path, progress_callback=None, timeout=300):
+    """V2 ordered EDL: source video and selected voice tracks share the frame clock."""
+    source = probe_media(source_path)
+    _canonical(source)
+    if not spans:
+        raise ValueError('至少保留一段内容才能生成短片。')
+    temporary = _temp_path(output_path)
+    try:
+        args=['ffmpeg','-hide_banner','-loglevel','error','-nostdin','-y','-threads','2',
+              '-filter_threads','2','-filter_complex_threads','2','-i',str(source_path)]
+        indexes={}
+        for rid, path in recordings.items():
+            indexes[rid]=len(indexes)+1
+            args+=['-i',str(path)]
+        graph, labels, frames=[],[],0
+        for i,span in enumerate(spans):
+            a,b,o=(span[k] for k in ['sourceStartFrame','sourceEndFrame','outputStartFrame'])
+            if any(type(v) is not int for v in [a,b,o]) or not 0<=a<b<=source['totalFrames'] or o!=frames:
+                raise ValueError('剪辑区间或输出时间轴无效。')
+            rid=span.get('recordingId');audio_index=indexes[rid] if rid else 0
+            aa=span.get('audioStartFrame',a) if rid else a
+            if type(aa) is not int or aa<0:raise ValueError('补录时间轴无效。')
+            graph.append('[0:v:0]trim=start_frame=%d:end_frame=%d,setpts=PTS-STARTPTS[v%d]'%(a,b,i))
+            graph.append('[%d:a:0]aresample=48000,atrim=start_sample=%d:end_sample=%d,asetpts=PTS-STARTPTS[a%d]'%
+                         (audio_index,aa*1600,(aa+b-a)*1600,i))
+            labels.append('[v%d][a%d]'%(i,i));frames+=b-a
+        graph.append(''.join(labels)+'concat=n=%d:v=1:a=1[outv][outa]'%len(spans))
+        if progress_callback:progress_callback('rendering',None)
+        _run(args+['-filter_complex',';'.join(graph),'-map','[outv]','-map','[outa]']+_encoder_args()+[str(temporary)],timeout)
+        if progress_callback:progress_callback('validating',None)
+        info=probe_media(temporary);_canonical(info)
+        if info['totalFrames']!=frames or abs(info['durationMs']-frames/0.03)>100:
+            raise ValueError('成片时长或帧数与剪辑清单不一致。')
+        os.replace(str(temporary),str(output_path))
+        return info
+    finally:
+        temporary.unlink(missing_ok=True)

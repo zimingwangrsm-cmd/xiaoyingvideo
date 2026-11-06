@@ -1,0 +1,52 @@
+{
+  "testedAt": "2026-11-06T07:41:50.619Z",
+  "baseUrl": "http://127.0.0.1:8770",
+  "actualInference": true,
+  "llmSkipped": false,
+  "passed": [
+    {
+      "name": "licensed real sample, local ASR word grid and actual video playback",
+      "words": 483,
+      "blocks": 41
+    },
+    {
+      "name": "caption correction, notes, measured word cut/restore and word correction"
+    },
+    {
+      "name": "whole sentence reordering with undo"
+    },
+    {
+      "name": "pending rewrite blocks export; real recording upload, ASR and confirmation clear pending state",
+      "replacementSource": "3 second excerpt of licensed Ying sample, not a new human recording"
+    },
+    {
+      "name": "V2 real render, video/subtitle playback, MP4/SRT/record and handoff ZIP downloads"
+    },
+    {
+      "name": "restore original audio marks rendered result stale"
+    },
+    {
+      "name": "video-only HTTP upload creates real automatic captions",
+      "words": 68
+    },
+    {
+      "name": "real Demucs separation, local retranscription, explicit confirmation and audition tracks",
+      "elapsed": 29.3
+    },
+    {
+      "name": "replacement can preserve the separated background track"
+    },
+    {
+      "name": "actual local Qwen strategy and per-item accept/reject",
+      "items": 1,
+      "elapsed": 14.8
+    },
+    {
+      "name": "mobile width without horizontal overflow"
+    },
+    {
+      "name": "no uncaught JavaScript errors"
+    }
+  ],
+  "pageErrors": []
+}

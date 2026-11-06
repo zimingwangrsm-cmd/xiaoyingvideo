@@ -13,6 +13,9 @@ from .media import prepare_source, probe_media, render_spans, sha256_file
 from .storage import DataDirectoryLease, Store, atomic_json, new_id
 from .suggestions import propose
 from .timeline import build_blocks, build_spans, duration_ms, map_cues, parse_srt, write_srt, write_vtt
+from .v2_service import V2ServiceMixin, V2_ACTIONS
+from . import editing, speech
+from .media import render_edit, _run
 
 LOG = logging.getLogger('koubo')
 
@@ -23,7 +26,7 @@ class AppError(Exception):
         super().__init__(message)
 
 
-class Service:
+class Service(V2ServiceMixin):
     def __init__(self, settings):
         self.settings = settings
         self._lease = DataDirectoryLease(settings.data_dir)
@@ -37,10 +40,12 @@ class Service:
         self.prepare_pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix='koubo-prepare')
         self.futures = {}
         self.fixture_dir = ROOT / 'fixtures'
+        self.init_v2()
 
     def close(self):
         try:
             self.prepare_pool.shutdown(wait=True)
+            self.processing_pool.shutdown(wait=True)
             self.render_pool.shutdown(wait=True)
         finally:
             self._lease.close()
@@ -72,13 +77,17 @@ class Service:
                 continue
             result.append({'id': manifest.get('id', manifest.get('sampleId', path.parent.name)),
                            'title': manifest.get('title', '口播精简示例'),
-                           'description': '按完整句确认必留、删减与恢复，再生成真实短片。',
+                           'description': manifest.get('description', '按完整句确认必留、删减与恢复，再生成真实短片。'),
                            'origin': manifest.get('origin', 'synthetic_narration'),
-                           'label': '合成旁白＋示例画面',
+                           'label': manifest.get('label', '合成旁白＋示例画面'),
                            'durationMs': manifest.get('durationMs', 0),
                            'transcriptVerified': manifest.get('transcriptVerified', False),
-                           'recommendedLockedIds': manifest.get('recommendedLockedIds', [])})
-        return result
+                           'recommendedLockedIds': manifest.get('recommendedLockedIds', []),
+                           'sourceUrl': manifest.get('sourceUrl'), 'author': manifest.get('author'),
+                           'license': manifest.get('license'), 'licenseUrl': manifest.get('licenseUrl'),
+                           'thumbnailUrl': '/api/samples/%s/poster' % manifest.get('id', path.parent.name)
+                               if (path.parent/'poster.jpg').is_file() else None})
+        return sorted(result, key=lambda item: (item['origin'] == 'synthetic_narration', item['id']))
 
     def _new_project(self, owner, title, origin):
         pid = new_id()
@@ -92,7 +101,7 @@ class Service:
         self.store.write('projects', pid, project)
         return project
 
-    def _ready(self, project, source, transcript_text):
+    def _ready(self, project, source, transcript_text, persist=True):
         # The grid is video frames, not the MP4 encoder padding at its final sample.
         timeline_ms = source['totalFrames'] * 1000 / 30
         cues = parse_srt(transcript_text, timeline_ms)
@@ -106,7 +115,14 @@ class Service:
         project['edit']['keptBlockIds'] = [b['id'] for b in blocks]
         project['_transcriptSha256'] = hashlib.sha256(transcript_text.encode('utf-8')).hexdigest()
         (self.store.project_dir(project['id']) / 'source.vtt').write_text(write_vtt(cues), encoding='utf-8')
-        self.store.write('projects', project['id'], project)
+        try:
+            directory = self.store.project_dir(project['id'])
+            _run(['ffmpeg','-v','error','-nostdin','-y','-ss',str(min(1.0,timeline_ms/2000)),
+                  '-i',str(directory/'source.mp4'),'-frames:v','1',str(directory/'poster.jpg')],30)
+        except ValueError:
+            pass  # A thumbnail failure must not discard usable media.
+        if persist:
+            self.store.write('projects', project['id'], project)
         return project
 
     def from_sample(self, owner, sample_id):
@@ -120,7 +136,8 @@ class Service:
         manifest = json.loads((folder / 'manifest.json').read_text(encoding='utf-8'))
         source_file = folder / manifest.get('videoFile', 'canonical.mp4')
         subtitle_file = folder / manifest.get('subtitleFile', 'sample.srt')
-        project = self._new_project(owner, samples[sample_id]['title'], 'synthetic_sample')
+        project = self._new_project(owner, samples[sample_id]['title'],
+                                    'recorded_sample' if manifest.get('origin') == 'recorded_sample' else 'synthetic_sample')
         directory = self.store.project_dir(project['id'])
         try:
             shutil.copyfile(source_file, directory / 'source.mp4')
@@ -131,6 +148,13 @@ class Service:
                 info = prepare_source(source_file, directory / 'source.mp4')
             project['sampleInfo'] = dict(samples[sample_id], sourceSha256=manifest.get('sourceSha256'))
             project = self._ready(project, info, text)
+            word_file = folder / 'transcription.json'
+            if word_file.is_file() and manifest.get('sourceSha256') == sha256_file(source_file):
+                transcription = json.loads(word_file.read_text(encoding='utf-8'))
+                self._upgrade(project)
+                project['words'] = editing.attach_words(project, transcription['words'])
+                project['transcriptionInfo'] = {k: v for k,v in transcription.items() if k not in ['cues', 'words']}
+                self.store.write('projects', project['id'], project)
             if (sample_id == 'interview_intro_v1' and len(project['blocks']) == 13 and
                     manifest.get('sourceSha256') == sha256_file(source_file) and
                     manifest.get('transcriptSha256') == sha256_file(subtitle_file)):
@@ -147,14 +171,19 @@ class Service:
             self.store.write('projects', project['id'], project)
         return self.dto(project)
 
-    def import_files(self, owner, video, subtitles):
+    def import_files(self, owner, video, subtitles=None, separate_voice=False):
         if not self.settings.allow_uploads:
             raise AppError('uploads_disabled', '此演示仅开放样例，请使用本地模式导入自己的素材。', 403)
         if Path(video.filename or '').suffix.lower() != '.mp4':
             raise AppError('unsupported_file', '当前支持 MP4 视频，请换一个文件。')
-        if Path(subtitles.filename or '').suffix.lower() != '.srt':
+        if subtitles is not None and Path(subtitles.filename or '').suffix.lower() != '.srt':
             raise AppError('unsupported_subtitles', '还需要一份与原片对应的 UTF-8 SRT 字幕。')
+        if subtitles is None and not speech.available(self.settings):
+            raise AppError('asr_unavailable', '本机语音模型尚未就绪，请先提供SRT或完成语音环境准备。', 503)
         project = self._new_project(owner, Path(video.filename).stem, 'user_upload')
+        project['_autoTranscribe'] = subtitles is None
+        project['_separateVoice'] = separate_voice
+        self.store.write('projects', project['id'], project)
         directory = self.store.project_dir(project['id'])
         try:
             total = 0
@@ -167,14 +196,15 @@ class Service:
                     if total > self.settings.max_upload_mb * 1024 * 1024:
                         raise ValueError('视频超过100 MB，请先压缩或截短。')
                     handle.write(chunk)
-            raw = subtitles.file.read(1024 * 1024 + 1)
+            raw = subtitles.file.read(1024 * 1024 + 1) if subtitles is not None else b''
             if len(raw) > 1024 * 1024:
                 raise ValueError('字幕文件超过1 MB，请检查是否为正确的 SRT。')
             try:
                 text = raw.decode('utf-8-sig')
             except UnicodeDecodeError:
                 raise ValueError('字幕不是 UTF-8 编码，请转换为 UTF-8 后重新导入。')
-            (directory / 'source.srt').write_text(text, encoding='utf-8')
+            if subtitles is not None:
+                (directory / 'source.srt').write_text(text, encoding='utf-8')
             self.prepare_pool.submit(self._prepare_upload, project['id'])
         except ValueError as exc:
             project.update(state='failed', error={'code': 'invalid_input', 'message': str(exc)})
@@ -186,7 +216,17 @@ class Service:
         directory = self.store.project_dir(pid)
         try:
             info = prepare_source(directory / 'upload.mp4', directory / 'source.mp4')
-            self._ready(project, info, (directory / 'source.srt').read_text(encoding='utf-8'))
+            if project.get('_autoTranscribe'):
+                if project.get('_separateVoice'):
+                    project['processPhase'] = 'separating'; self.store.write('projects', pid, project)
+                    project['audioProcessing'] = self._separate(pid, directory/'initial_processing')
+                project['processPhase'] = 'transcribing'; self.store.write('projects', pid, project)
+                source = directory / ('separated_vocals.wav' if project.get('_separateVoice') else 'source.mp4')
+                result = speech.run_worker(self.settings, 'transcribe', source, directory/'initial_processing/transcription.json')
+                with self.store.locked(pid):
+                    self._speech_result(project, info, result)
+            else:
+                self._ready(project, info, (directory / 'source.srt').read_text(encoding='utf-8'))
         except Exception as exc:
             LOG.warning('prepare failed for %s: %s', pid, type(exc).__name__)
             project.update(state='failed', error={'code': 'prepare_failed', 'message': str(exc) if isinstance(exc, ValueError) else '素材准备失败，请确认视频与字幕可正常读取后重试。'})
@@ -196,12 +236,15 @@ class Service:
         if project['state'] != 'ready':
             return {'plannedDurationMs': 0, 'lockedDurationMs': 0, 'targetStatus': 'preparing', 'keptCount': 0, 'deletedCount': 0}
         edit, blocks = project['edit'], project['blocks']
-        spans = build_spans(blocks, edit['keptBlockIds']) if edit['keptBlockIds'] else []
+        spans, _ = self._edit_timeline(project)
         planned = duration_ms(spans)
         locked_ms = sum(b['clipEndFrame'] - b['clipStartFrame'] for b in blocks if b['id'] in edit['lockedBlockIds']) * 1000 / 30
         shortest = min(b['clipEndFrame'] - b['clipStartFrame'] for b in blocks) * 1000 / 30
+        words = editing.all_words(project)
+        if words:
+            shortest = min(shortest, min(w['clipEndFrame'] - w['clipStartFrame'] for w in words) / .03)
         status = 'within_target'
-        if not edit['keptBlockIds']:
+        if not spans:
             status = 'empty_selection'
         elif locked_ms > edit['targetMs']:
             status = 'locked_conflict'
@@ -209,16 +252,28 @@ class Service:
             status = 'no_nonempty_cut'
         elif planned > edit['targetMs']:
             status = 'over_target'
+        active_ids = {bid for span in spans for bid in span['blockIds']}
         return {'plannedDurationMs': planned, 'lockedDurationMs': locked_ms, 'targetStatus': status,
-                'keptCount': len(edit['keptBlockIds']), 'deletedCount': len(blocks) - len(edit['keptBlockIds'])}
+                'keptCount': len(active_ids), 'deletedCount': len(blocks) - len(active_ids)}
 
     def dto(self, project):
         dto = {k: copy.deepcopy(v) for k, v in project.items() if not k.startswith('_')}
         dto['source']['videoUrl'] = '/api/projects/%s/source/video' % project['id']
         dto['source']['subtitleUrl'] = '/api/projects/%s/source/subtitles?format=vtt' % project['id']
+        if (self.store.project_dir(project['id'])/'poster.jpg').is_file():
+            dto['source']['posterUrl'] = '/api/projects/%s/source/poster' % project['id']
         dto['metrics'] = self.metrics(project)
         dto['canUndo'] = bool(project.get('_history'))
         dto['suggestionMode'] = 'llm' if self.settings.model_available and project['source']['origin'] != 'user_upload' else 'rules'
+        if self.settings.local_llm_url:
+            dto['suggestionMode'] = 'local_llm'
+        dto['capabilities'] = self.capabilities()
+        dto['words'] = editing.all_words(project)
+        dto['metrics']['deletedWordCount'] = len(project['edit'].get('deletedWordIds', []))
+        dto['metrics']['pendingRewriteCount'] = len(set(project['edit'].get('pendingRewrites', {})) & set(project['edit']['keptBlockIds']))
+        if project.get('audioProcessing', {}).get('status') == 'ready':
+            dto['audioProcessing'].update(vocalsUrl='/api/projects/%s/audio/vocals' % project['id'],
+                                          backgroundUrl='/api/projects/%s/audio/background' % project['id'])
         return dto
 
     def get_project(self, owner, pid):
@@ -231,6 +286,8 @@ class Service:
             raise AppError('revision_conflict', '内容刚刚发生变化，已保留最新选择，请刷新后重试。', 409)
 
     def action(self, owner, pid, request):
+        if request.action.type in V2_ACTIONS:
+            return self.refine(owner, pid, request)
         with self.store.locked(pid):
             project = self._owned('projects', pid, owner)
             self._editable(project, request.expectedRevision)
@@ -253,6 +310,9 @@ class Service:
                     raise AppError('lock_limit', '最多设置5个必留片段，请先取消部分必留。')
                 locked |= ids
                 kept |= ids
+                word_ids = {w['id'] for w in editing.all_words(project) if w['blockId'] in ids}
+                if 'deletedWordIds' in edit:
+                    edit['deletedWordIds'] = [i for i in edit['deletedWordIds'] if i not in word_ids]
             elif action.type == 'unlock':
                 locked -= ids
             elif action.type == 'delete':
@@ -263,6 +323,7 @@ class Service:
                 kept |= ids
             elif action.type == 'restore_all':
                 kept = set(valid)
+                if 'deletedWordIds' in edit: edit['deletedWordIds'] = []
             elif action.type == 'apply_proposal':
                 if not self.store.valid_id(action.proposalId):
                     raise AppError('proposal_missing', '请先生成一份有效建议。')
@@ -285,7 +346,7 @@ class Service:
                 edit['keptBlockIds'] = [bid for bid in valid if bid in kept]
                 edit['lockedBlockIds'] = [bid for bid in valid if bid in locked]
                 if action.type != 'apply_proposal' and all(
-                        edit[key] == before[key] for key in ('targetMs', 'keptBlockIds', 'lockedBlockIds')):
+                        edit.get(key) == before.get(key) for key in ('targetMs', 'keptBlockIds', 'lockedBlockIds', 'deletedWordIds')):
                     return self.dto(project)
                 if action.type != 'apply_proposal':
                     edit['hasManualEdits'] = True
@@ -311,13 +372,15 @@ class Service:
             self._editable(project, request.expectedRevision)
             if not project['edit']['keptBlockIds']:
                 raise AppError('empty_selection', '至少保留一段内容才能生成短片。')
+            if set(project['edit'].get('pendingRewrites', {})) & set(project['edit']['keptBlockIds']):
+                raise AppError('pending_recording', '有修改说法尚待补录，请完成补录或撤回改写后生成。')
             metrics = self.metrics(project)
             if metrics['plannedDurationMs'] > project['edit']['targetMs'] and not request.allowOverTarget:
                 raise AppError('over_target', '当前选择超过目标，请继续调整，或明确选择按当前时长导出。', 422,
                                {'plannedDurationMs': metrics['plannedDurationMs'], 'targetMs': project['edit']['targetMs']})
             snapshot = copy.deepcopy(project)
-            spans = build_spans(snapshot['blocks'], snapshot['edit']['keptBlockIds'])
-            mapped = map_cues(snapshot['cues'], spans)
+            spans, mapped = self._edit_timeline(snapshot)
+            if not spans: raise AppError('empty_selection', '至少保留一个有声音的片段或词语。')
             key_payload = {'projectId': pid, 'snapshotRevision': snapshot['revision'],
                            'sourceSha256': snapshot['source']['sha256'], 'fps': 30, 'sampleRate': 48000,
                            'spans': spans, 'cues': mapped, 'encoder': 'h264-aac-v1'}
@@ -360,12 +423,18 @@ class Service:
             progress('rendering', None)
             if injected:
                 raise AppError('injected_render_failure', '这次短片没有生成成功，已保留你的编辑。')
-            info = render_spans(self.store.project_dir(job['projectId']) / 'source.mp4', job['spans'],
-                                directory / 'koubo.mp4', progress_callback=progress)
+            if snapshot.get('schemaVersion', 1) >= 2:
+                recordings = {r['id']: self.store.project_dir(job['projectId'])/'recordings'/r['id']/'audio.wav'
+                              for r in snapshot['edit'].get('recordings', {}).values()}
+                info = render_edit(self.store.project_dir(job['projectId'])/'source.mp4', job['spans'],
+                                   recordings, directory/'koubo.mp4', progress_callback=progress)
+            else:
+                info = render_spans(self.store.project_dir(job['projectId']) / 'source.mp4', job['spans'],
+                                    directory / 'koubo.mp4', progress_callback=progress)
             (directory / 'koubo.srt').write_text(write_srt(mapped), encoding='utf-8')
             (directory / 'koubo.vtt').write_text(write_vtt(mapped), encoding='utf-8')
             aid = new_id()
-            record = {'schemaVersion': 1, 'artifactId': aid, 'projectId': job['projectId'],
+            record = {'schemaVersion': snapshot.get('schemaVersion', 1), 'artifactId': aid, 'projectId': job['projectId'],
                       'snapshotRevision': job['snapshotRevision'], 'renderKey': job['renderKey'],
                       'sourceSha256': snapshot['source']['sha256'], 'origin': snapshot['source']['origin'],
                       'sampleInfo': snapshot.get('sampleInfo'), 'selection': snapshot['edit'],
@@ -405,7 +474,8 @@ class Service:
             base = '/api/artifacts/' + job['artifactId']
             dto['artifact'] = {'id': job['artifactId'], 'videoUrl': base + '/video',
                                'downloadUrl': base + '/video?download=1', 'srtUrl': base + '/subtitles?format=srt',
-                               'vttUrl': base + '/subtitles?format=vtt', 'recordUrl': base + '/record'}
+                               'vttUrl': base + '/subtitles?format=vtt', 'recordUrl': base + '/record',
+                               'bundleUrl': base + '/bundle'}
         return dto
 
     def get_job(self, owner, jid):
@@ -415,7 +485,7 @@ class Service:
         project = self._owned('projects', pid, owner)
         if project['state'] != 'ready':
             raise AppError('project_not_ready', '素材尚未准备好，请稍后再试。', 409)
-        return self.store.project_dir(pid) / ('source.mp4' if kind == 'video' else 'source.vtt')
+        return self.store.project_dir(pid) / {'video':'source.mp4','vtt':'source.vtt','poster':'poster.jpg'}[kind]
 
     def artifact_path(self, owner, aid, kind, require_current=True):
         artifact = self._owned('artifacts', aid, owner)

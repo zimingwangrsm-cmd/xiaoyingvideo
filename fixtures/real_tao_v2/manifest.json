@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 2,
+  "id": "real_tao_v2",
+  "title": "真人口播：Tao的语言与生活",
+  "description": "公开授权真人中文口播；本机自动识别字幕，可校对、剪词和整句重排。",
+  "origin": "recorded_sample",
+  "label": "真人口播 · 本机识别字幕",
+  "videoFile": "canonical.mp4",
+  "subtitleFile": "sample.srt",
+  "sourceSha256": "d5e2916c26c75a8a63a0621f2b753e219dab04f4900eba52c3c50488aeca056b",
+  "transcriptSha256": "f87bdab716b7543f756e77ab3e3d5a33b1a209299cadedf572ee751da29498fa",
+  "durationMs": 128200.0,
+  "totalFrames": 3846,
+  "author": "Wikitongues, Teddy Nee",
+  "sourceUrl": "https://commons.wikimedia.org/wiki/File:WIKITONGUES-_Tao_speaking_Yunnan_Mandarin_with_Thai_and_Taiwanese_accent.webm",
+  "license": "CC BY-SA 4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "licenseNote": "保留署名、来源与许可；截取/转换后的媒体及其剪辑衍生内容沿用CC BY-SA 4.0。无原作者背书。",
+  "changes": "转为H.264/AAC、30fps/48kHz；采用开头128.2秒；自动生成简体中文字幕。 原始视频尾部画面短于音频，延长末帧保持完整语音。",
+  "transcriptVerified": false,
+  "transcriptReview": "Automatic recognition; requires creator review.",
+  "recommendedLockedIds": [],
+  "asr": {
+    "language": "zh",
+    "engine": "faster-whisper",
+    "model": "medium",
+    "device": "cpu",
+    "computeType": "int8",
+    "transcriptVerified": false,
+    "elapsedSeconds": 28.92
+  }
+}

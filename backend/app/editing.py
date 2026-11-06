@@ -9,7 +9,7 @@ def defaults(project):
     edit = copy.deepcopy(project['edit'])
     for key, value in {'order': [b['id'] for b in project['blocks']], 'deletedWordIds': [],
                        'captionEdits': {}, 'wordEdits': {}, 'notes': {}, 'recordings': {},
-                       'pendingRewrites': {}}.items():
+                       'pendingRewrites': {}, 'brief': ''}.items():
         edit.setdefault(key, value)
     return edit
 
@@ -144,7 +144,10 @@ def apply_edit(project, action):
     text = action.get('text', '').strip()
     if len(text) > 4000:
         raise ValueError('单段文字不能超过4000字。')
-    if kind == 'correct_caption':
+    if kind == 'set_brief':
+        if len(text)>300:raise ValueError('剪辑主线最多300字。')
+        edit['brief']=text
+    elif kind == 'correct_caption':
         if not bid: raise ValueError('请选择要校对的片段。')
         if any(w['id'] in edit['deletedWordIds'] for w in all_words(project) if w['blockId'] == bid):
             raise ValueError('该段已有词级删减，请逐词校对，或恢复词语后整段校对。')

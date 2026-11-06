@@ -85,6 +85,7 @@ class Service(V2ServiceMixin):
                            'recommendedLockedIds': manifest.get('recommendedLockedIds', []),
                            'sourceUrl': manifest.get('sourceUrl'), 'author': manifest.get('author'),
                            'license': manifest.get('license'), 'licenseUrl': manifest.get('licenseUrl'),
+                           'showcaseUrl':manifest.get('showcaseUrl'), 'showcaseLabel':manifest.get('showcaseLabel'),
                            'thumbnailUrl': '/api/samples/%s/poster' % manifest.get('id', path.parent.name)
                                if (path.parent/'poster.jpg').is_file() else None})
         return sorted(result, key=lambda item: (item['origin'] == 'synthetic_narration', item['id']))
@@ -155,6 +156,13 @@ class Service(V2ServiceMixin):
                 project['words'] = editing.attach_words(project, transcription['words'])
                 project['transcriptionInfo'] = {k: v for k,v in transcription.items() if k not in ['cues', 'words']}
                 self.store.write('projects', project['id'], project)
+            if manifest.get('samplePreset'):
+                preset=manifest['samplePreset'];valid={b['id'] for b in project['blocks']}
+                locks=preset.get('lockedBlockIds',[])
+                if len(locks)<=5 and set(locks)<=valid and 1<=preset.get('targetMs',0)<=180000:
+                    self._upgrade(project)
+                    project['edit'].update(targetMs=preset['targetMs'],lockedBlockIds=locks,brief=str(preset.get('brief',''))[:300])
+                    self.store.write('projects',project['id'],project)
             if (sample_id == 'interview_intro_v1' and len(project['blocks']) == 13 and
                     manifest.get('sourceSha256') == sha256_file(source_file) and
                     manifest.get('transcriptSha256') == sha256_file(subtitle_file)):
@@ -215,7 +223,7 @@ class Service(V2ServiceMixin):
         project = self.store.read('projects', pid)
         directory = self.store.project_dir(pid)
         try:
-            info = prepare_source(directory / 'upload.mp4', directory / 'source.mp4')
+            info = prepare_source(directory / 'upload.mp4', directory / 'source.mp4', max_seconds=self.settings.max_source_seconds)
             if project.get('_autoTranscribe'):
                 if project.get('_separateVoice'):
                     project['processPhase'] = 'separating'; self.store.write('projects', pid, project)
@@ -259,7 +267,7 @@ class Service(V2ServiceMixin):
     def dto(self, project):
         dto = {k: copy.deepcopy(v) for k, v in project.items() if not k.startswith('_')}
         dto['source']['videoUrl'] = '/api/projects/%s/source/video' % project['id']
-        dto['source']['subtitleUrl'] = '/api/projects/%s/source/subtitles?format=vtt' % project['id']
+        dto['source']['subtitleUrl'] = '/api/projects/%s/source/subtitles?format=vtt&v=%s' % (project['id'], project.get('_transcriptSha256','original')[:12])
         if (self.store.project_dir(project['id'])/'poster.jpg').is_file():
             dto['source']['posterUrl'] = '/api/projects/%s/source/poster' % project['id']
         dto['metrics'] = self.metrics(project)
@@ -268,6 +276,7 @@ class Service(V2ServiceMixin):
         if self.settings.local_llm_url:
             dto['suggestionMode'] = 'local_llm'
         dto['capabilities'] = self.capabilities()
+        dto['transcriptRestorePoints'] = copy.deepcopy(project.get('_transcriptRestorePoints',[]))
         dto['words'] = editing.all_words(project)
         dto['metrics']['deletedWordCount'] = len(project['edit'].get('deletedWordIds', []))
         dto['metrics']['pendingRewriteCount'] = len(set(project['edit'].get('pendingRewrites', {})) & set(project['edit']['keptBlockIds']))

@@ -12,8 +12,9 @@ from fastapi.staticfiles import StaticFiles
 
 from .config import ROOT, Settings, settings_from_env
 from .schemas import (ActionRequest, ProposalRequest, RenderRequest, SampleRequest,
-                      ProcessingRequest, ConfirmProcessingRequest, ProposalDecisionRequest)
+                      ProcessingRequest, ConfirmProcessingRequest, ProposalDecisionRequest, RestoreTranscriptRequest)
 from .service import AppError, Service
+from . import delivery
 
 COOKIE = 'koubo_session'
 
@@ -104,7 +105,8 @@ def create_app(settings: Optional[Settings] = None):
         return {'status': 'ok', 'mediaAvailable': bool(shutil.which('ffmpeg') and shutil.which('ffprobe')),
                 'mode': settings.mode, 'allowUploads': settings.allow_uploads,
                 'suggestionMode': 'local_llm' if settings.local_llm_url else 'llm' if settings.model_available else 'rules',
-                'capabilities': service.capabilities(), 'version': 2}
+                'capabilities': service.capabilities(), 'version': 2,
+                'limits': {'maxUploadMb':settings.max_upload_mb,'maxSourceSeconds':settings.max_source_seconds}}
 
     @app.get('/api/samples')
     def samples():
@@ -144,6 +146,10 @@ def create_app(settings: Optional[Settings] = None):
     @app.post('/api/projects/{pid}/transcript/confirm')
     def confirm_transcript(pid: str, body: ConfirmProcessingRequest, request: Request):
         return service.confirm_transcript(request.state.owner, pid, body)
+
+    @app.post('/api/projects/{pid}/transcript/restore')
+    def restore_transcript(pid: str, body: RestoreTranscriptRequest, request: Request):
+        return service.restore_transcript(request.state.owner, pid, body)
 
     @app.post('/api/projects/{pid}/proposal-decisions')
     def decide_proposal(pid: str, body: ProposalDecisionRequest, request: Request):
@@ -241,6 +247,24 @@ def create_app(settings: Optional[Settings] = None):
         if not path.is_file():
             return HTMLResponse('<h1>口播精简</h1><p>前端尚未构建，请按 README 运行构建命令。</p>', status_code=503)
         return FileResponse(path, media_type='text/html')
+
+    @app.get('/delivery')
+    def delivery_page():
+        if settings.mode!='local':raise AppError('not_found','此入口仅在本地模式可用。',404)
+        return HTMLResponse(delivery.page())
+
+    @app.get('/api/deliverables')
+    def delivery_index():
+        if settings.mode!='local':raise AppError('not_found','此入口仅在本地模式可用。',404)
+        return {'artifacts':delivery.index()}
+
+    @app.get('/api/deliverables/{key}')
+    def delivery_file(key: str, request: Request, download: int = 0):
+        if settings.mode!='local' or key not in delivery.FILES:raise AppError('not_found','找不到交付文件。',404)
+        _,relative,mime=delivery.FILES[key];path=ROOT/'deliverables'/relative
+        if not path.is_file():raise AppError('not_found','文件尚未准备好。',404)
+        if mime=='video/mp4':return media_response(path,request,bool(download))
+        return FileResponse(path,media_type=mime,filename=path.name if mime!='text/html; charset=utf-8' else None)
 
     @app.get('/{path:path}')
     def missing(path: str):

@@ -1,3 +1,5 @@
+> 历史基线文档：测试数量与截图对应本轮优化前版本。当前状态见根README及deliverables/optimization/REVIEW_RESPONSE.md。
+
 # 完成性审计
 
 2026-11-06：原有P0功能已完成HTTP、真实浏览器和服务重启验收；没有重开发已有功能。

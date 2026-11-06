@@ -14,7 +14,7 @@ class SampleRequest(StrictModel):
 class Action(StrictModel):
     type: Literal['set_target', 'lock', 'unlock', 'delete', 'restore', 'restore_all', 'apply_proposal', 'undo',
                   'correct_caption', 'correct_word', 'annotate', 'delete_words', 'restore_words',
-                  'move_block', 'set_rewrite', 'restore_audio']
+                  'move_block', 'set_rewrite', 'restore_audio', 'set_brief']
     blockIds: List[StrictStr] = Field(default_factory=list, max_items=500)
     targetMs: Optional[StrictInt] = None
     proposalId: Optional[StrictStr] = None
@@ -45,6 +45,8 @@ class ProcessingRequest(StrictModel):
     separateVoice: bool = False
     blockId: Optional[StrictStr] = None
     recordingId: Optional[StrictStr] = None
+    fileName: Optional[StrictStr] = None
+    uploadSha256: Optional[StrictStr] = None
     keepBackground: bool = False
 
 
@@ -56,7 +58,7 @@ class ConfirmProcessingRequest(StrictModel):
 class ProposalDecisionRequest(StrictModel):
     expectedRevision: StrictInt
     proposalId: StrictStr
-    itemIds: List[StrictStr] = Field(min_items=1, max_items=12)
+    itemIds: List[StrictStr] = Field(min_items=1, max_items=32)
     decision: Literal['accept', 'reject']
 
 
@@ -77,3 +79,8 @@ class ModelAnswer(StrictModel):
         if len(value) > 400:
             raise ValueError('说明过长')
         return value
+
+
+class RestoreTranscriptRequest(StrictModel):
+    expectedRevision: StrictInt
+    snapshotId: StrictStr

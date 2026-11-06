@@ -1,0 +1,7 @@
+{
+  "url": "http://127.0.0.1:8767",
+  "dataDirectory": "data/acceptance_20261106",
+  "existingProjectStatesPreserved": 17,
+  "faultInjectionEnabled": false,
+  "backup": "private data directory; not distributed"
+}

@@ -1,18 +1,22 @@
+import { renderInto } from './dom.js';
+import { cutPoints } from './v2views.js';
+import { draftFor, setDraft, clearSavedDraft, projectHasDrafts } from './drafts.js';
 import { ApiError, STORAGE_KEY, request, acceptProjectUpdate, isCurrentArtifact, isCurrentProposal, clock } from './model.js';
 import { renderView } from './views.js';
 
 const app = document.getElementById('app');
 const state = {
-  loading: true, health: null, samples: [], project: null, previousProject: null, view: 'start',
+  loading: true, health: null, samples: [], project: null, recentProjects: [], previousProject: null, view: 'start',
   files: { video: null, subtitles: null }, busy: '', proposalPending: false,
   proposal: null, job: null, notice: null, retry: null,
   selectedSampleId: '', separateVoice: false, processingJob: null, proposalV2: null,
-  refineBlock: null, selectedWordIds: [], refineDrafts: {}, recordingFile: null, keepBackground: false, editorStage: 'edit',
-  onlyDeleted: false, allowOver: false, activeBlock: null, playheadMs: 0, targetDraft: '',
+  refineBlock: null, refineTab: 'text', selectedWordIds: [], refineDrafts: {}, recordingFile: null, keepBackground: false, editorStage: 'edit',
+  cutLoop: null, cutIndex: 0, onlyDeleted: false, allowOver: false, activeBlock: null, playheadMs: 0, targetDraft: '',
 };
 let projectTimer, jobTimer, processingTimer, projectEpoch = 0, jobEpoch = 0;
 let autoShowJob = null;
 const wiredVideos = new WeakSet();
+let lastDialogKey = null, returnFocusBlock = null;
 
 function showNotice(message, kind = 'error', retry = null) {
   state.notice = { message, kind, retry: retry ? 'retry-operation' : '' };
@@ -20,19 +24,34 @@ function showNotice(message, kind = 'error', retry = null) {
 }
 
 function draw() {
-  const oldVideo = app.querySelector('video');
+  const openDetails=[...app.querySelectorAll('details[id]')].filter(el=>el.open).map(el=>el.id);
+  const oldMedia = [...app.querySelectorAll('video,audio')];
+  const playback=new Map(oldMedia.map(m=>[m,{playing:!m.paused&&!m.ended,time:m.currentTime}]));
+  const dialogKey=state.refineBlock ? state.project?.id+'/'+state.refineBlock : null;
+  const drawerScroll=dialogKey===lastDialogKey ? document.querySelector('.refine-panel')?.scrollTop||0 : 0;
   const focused = document.activeElement;
   const focusId = focused?.id;
+  const focusData=focused?.dataset ? {...focused.dataset} : {};
+  const focusTag=focused?.tagName;
   const selection = focused && 'selectionStart' in focused ? [focused.selectionStart, focused.selectionEnd] : null;
   const listScroll = document.getElementById('block-list')?.scrollTop || 0;
-  app.innerHTML = renderView(state);
-  const newVideo = app.querySelector('video');
-  if (oldVideo && newVideo && oldVideo.dataset.mediaKey === newVideo.dataset.mediaKey) newVideo.replaceWith(oldVideo);
-  else if (oldVideo) oldVideo.pause();
+  renderInto(app, renderView(state));
+  openDetails.forEach(id=>{const el=document.getElementById(id);if(el)el.open=true;});
+  for(const fresh of app.querySelectorAll('video,audio')) {
+    const old=oldMedia.find(m=>m.tagName===fresh.tagName && m.getAttribute('src')===fresh.getAttribute('src'));
+    if(old){
+      const before=old.querySelector('track'),after=fresh.querySelector('track');
+      if(before&&after&&before.getAttribute('src')!==after.getAttribute('src'))before.replaceWith(after);
+      if(fresh!==old)fresh.replaceWith(old);oldMedia.splice(oldMedia.indexOf(old),1);
+      const prior=playback.get(old);if(prior?.playing){if(Math.abs(old.currentTime-prior.time)>.15)old.currentTime=prior.time;old.play().catch(()=>{});}
+    }
+  }
+  oldMedia.forEach(media=>media.pause());
   const video = app.querySelector('video');
   if (video && !wiredVideos.has(video)) {
     wiredVideos.add(video);
     video.addEventListener('timeupdate', () => {
+      if(video.id==='result-video' && state.cutLoop && video.getAttribute('src')===state.cutLoop.src && video.currentTime>=state.cutLoop.end){video.currentTime=state.cutLoop.start;}
       if (video.id !== 'source-video' || !state.project) return;
       state.playheadMs = video.currentTime * 1000;
       const timeLabel = document.getElementById('playback-time');
@@ -68,6 +87,18 @@ function draw() {
       }
     }
   }
+  const drawer=document.querySelector('.refine-panel');
+  if(drawer)drawer.scrollTop=drawerScroll;
+  if(!focusId && focusData.action){
+    const match=[...app.querySelectorAll('[data-action]')].find(el=>el.tagName===focusTag && Object.entries(focusData).every(([key,value])=>el.dataset[key]===value));
+    match?.focus({preventScroll:true});
+  }
+  if(dialogKey && dialogKey!==lastDialogKey){
+    returnFocusBlock=state.refineBlock;document.querySelector('[data-action="close-refine"]')?.focus({preventScroll:true});
+  }else if(!dialogKey && lastDialogKey){
+    [...app.querySelectorAll('[data-action="refine"]')].find(el=>el.dataset.id===returnFocusBlock)?.focus({preventScroll:true});
+  }
+  lastDialogKey=dialogKey;
 }
 
 function persistProjectId(id) {
@@ -78,11 +109,13 @@ function setProject(next, isNew = false) {
   if (!isNew && !acceptProjectUpdate(state.project, next)) return false;
   const previous = state.project;
   if (isNew) {
+    if(previous?.state==='ready'&&previous.id!==next.id) state.recentProjects=[{id:previous.id,title:previous.title},...state.recentProjects.filter(p=>p.id!==previous.id&&p.id!==next.id)].slice(0,5);
     if (next.state !== 'ready' && previous?.state === 'ready') state.previousProject = previous;
     projectEpoch++;
     jobEpoch++;
     clearTimeout(projectTimer); clearTimeout(jobTimer); clearTimeout(processingTimer);
     state.processingJob=null; state.proposalV2=null; state.refineBlock=null; state.selectedWordIds=[];
+    state.recordingFile=null;state.keepBackground=false;state.cutLoop=null;state.briefDraft=null;state.busy='';
     state.proposal = null; state.job = null; state.proposalPending = false;
     state.activeBlock = null; state.playheadMs = 0; state.onlyDeleted = false;
     autoShowJob = null;
@@ -150,27 +183,43 @@ function pollJob(jobId, immediate = false) {
 
 async function handleFailure(error, retry, id) {
   if (id && id !== state.project?.id) return;
-  if (error instanceof ApiError && error.status === 409 && state.project) {
+  if (error instanceof ApiError && error.status === 409 && error.code === 'revision_conflict' && state.project) {
     try { await refreshProject(); } catch { /* Original action error remains actionable. */ }
-    showNotice('当前选择已更新，请根据最新内容重新操作。', 'warning');
+    if(id && state.project?.id!==id)return;
+    showNotice('当前选择已更新，未保存的输入仍保留。请检查后重新保存。', 'warning', retry);
   } else showNotice(error.message || '操作没有完成，请重试。', 'error', retry);
 }
 
-async function mutate(action) {
-  if (!state.project || state.busy) return;
-  const id = state.project.id, revision = state.project.revision;
+async function mutate(action, retry = null) {
+  if (!state.project || state.busy) return false;
+  const id = state.project.id, revision = state.project.revision, epoch=projectEpoch;
   state.busy = 'edit'; state.notice = null; draw();
   try {
     const next = await request(`/api/projects/${encodeURIComponent(id)}/actions`, { method: 'POST', body: { expectedRevision: revision, action } });
-    if (state.project?.id === id) {
+    if (state.project?.id === id && epoch===projectEpoch) {
       setProject(next);
       if (action.type === 'apply_proposal') {
         state.proposal = null;
         showNotice('已应用建议。可以逐段恢复，或撤销这次调整。', 'success');
       }
+      return true;
     }
-  } catch (error) { await handleFailure(error, () => mutate(action), id); }
-  finally { state.busy = ''; draw(); }
+    return false;
+  } catch (error) { if(epoch===projectEpoch)await handleFailure(error, retry || (() => mutate(action)), id);return false; }
+  finally { if(epoch===projectEpoch){state.busy = ''; draw();} }
+}
+
+async function saveRefineField(type,field,text,extra={}) {
+  const pid=state.project.id,bid=state.refineBlock,epoch=projectEpoch;
+  const submittedDraft=draftFor(state.refineDrafts,pid,bid)[field];
+  const action={type,blockId:bid,text,...extra};
+  const retry=()=>{
+    if(state.project?.id!==pid||state.refineBlock!==bid)return;
+    return saveRefineField(type,field,draftFor(state.refineDrafts,pid,bid)[field]??text,extra);
+  };
+  if(await mutate(action,retry) && state.project?.id===pid && epoch===projectEpoch){
+    clearSavedDraft(state.refineDrafts,pid,bid,field,submittedDraft);draw();
+  }
 }
 
 async function createSample() {
@@ -263,6 +312,13 @@ app.addEventListener('click', async event => {
   switch (action) {
     case 'start-sample': await createSample(); break;
     case 'new-project': state.view = 'start'; state.notice = null; draw(); window.scrollTo(0, 0); break;
+    case 'resume-recent': {
+      if(state.busy)break;const pid=document.getElementById('recent-project')?.value;if(!pid)break;
+      state.busy='resume';draw();
+      try{const p=await request(`/api/projects/${pid}`);setProject(p,true);state.view='editor';state.notice=null;if(p.latestRenderId)pollJob(p.latestRenderId,true);}
+      catch(error){showNotice(error.message);}
+      finally{state.busy='';draw();}break;
+    }
     case 'resume-project': case 'back-editor': state.view = 'editor'; state.notice = null; draw(); window.scrollTo(0, 0); break;
     case 'previous-project': {
       const previous = state.previousProject;
@@ -274,10 +330,17 @@ app.addEventListener('click', async event => {
       if (state.project?.latestRenderId) pollJob(state.project.latestRenderId, true);
       break;
     }
-    case 'stage-proof': state.editorStage='proof'; state.refineBlock=state.project.blocks[0]?.id; state.selectedWordIds=[];draw(); break;
+    case 'loop-cut': {
+      const video=document.getElementById('result-video'),time=cutPoints(state.job)[state.cutIndex||0];
+      if(video&&time!==undefined){state.cutLoop={start:Math.max(0,time-1),end:Math.min(video.duration||Infinity,time+1.5),src:video.getAttribute('src')};video.currentTime=state.cutLoop.start;video.play().catch(()=>{});draw();}break;
+    }
+    case 'stop-cut': state.cutLoop=null;document.getElementById('result-video')?.pause();draw();break;
+    case 'stage-proof': state.refineTab='text';state.editorStage='proof'; state.refineBlock=state.project.blocks[0]?.id; state.selectedWordIds=[];draw(); break;
     case 'stage-edit': state.editorStage='edit'; draw(); break;
-    case 'refine': state.refineBlock=id; state.selectedWordIds=[]; state.recordingFile=null; draw(); break;
+    case 'refine': state.refineTab='text';state.keepBackground=false;state.refineBlock=id; state.selectedWordIds=[]; state.recordingFile=null; draw(); break;
     case 'close-refine': state.refineBlock=null; state.selectedWordIds=[]; draw(); break;
+    case 'refine-tab': state.refineTab=target.dataset.tab;draw();break;
+    case 'discard-drafts': delete state.refineDrafts[state.project.id]?.[state.refineBlock];draw();break;
     case 'select-word': {
       const wid=target.dataset.word;
       state.selectedWordIds=state.selectedWordIds.includes(wid)?state.selectedWordIds.filter(i=>i!==wid):[...state.selectedWordIds,wid];draw();break;
@@ -290,9 +353,9 @@ app.addEventListener('click', async event => {
       if(word&&v){v.currentTime=word.startMs/1000;v.play().catch(()=>{});}break;
     }
     case 'move-up': case 'move-down': await mutate({type:'move_block',blockId:id,direction:action==='move-up'?-1:1});break;
-    case 'clear-caption': await mutate({type:'correct_caption',blockId:state.refineBlock,text:''});state.refineDrafts={};draw();break;
-    case 'clear-rewrite': await mutate({type:'set_rewrite',blockId:state.refineBlock,text:''});state.refineDrafts={};draw();break;
-    case 'restore-audio': await mutate({type:'restore_audio',blockId:state.refineBlock});state.refineDrafts={};draw();break;
+    case 'clear-caption': await saveRefineField('correct_caption','caption','');break;
+    case 'clear-rewrite': await saveRefineField('set_rewrite','rewrite','');break;
+    case 'restore-audio': await mutate({type:'restore_audio',blockId:state.refineBlock});break;
     case 'retry-import': {
       try { const p=await request(`/api/projects/${state.project.id}/retry-import`,{method:'POST',body:{expectedRevision:state.project.revision}});setProject(p);draw();pollPreparing(); }
       catch(error){await handleFailure(error,null,state.project.id);draw();}break;
@@ -300,6 +363,16 @@ app.addEventListener('click', async event => {
     case 'transcribe': await startProcessing('transcribe');break;
     case 'separate': await startProcessing('separate');break;
     case 'retry-processing': await startProcessing(state.processingJob.kind);break;
+    case 'restore-transcript': {
+      if(projectHasDrafts(state.refineDrafts,state.project.id)){showNotice('先保存或放弃未保存输入，再恢复版本。');draw();break;}
+      const pid=state.project.id,epoch=projectEpoch,snapshotId=document.getElementById('restore-point')?.value;
+      if(!snapshotId||state.busy)break;
+      state.busy='edit';draw();
+      try { const p=await request(`/api/projects/${pid}/transcript/restore`,{method:'POST',body:{expectedRevision:state.project.revision,snapshotId}});
+        if(epoch===projectEpoch&&state.project?.id===pid){setProject(p);state.processingJob=null;state.proposalV2=null;showNotice('已恢复识别前的编辑。请生成新版本后下载。','success');}
+      }catch(error){await handleFailure(error,null,pid);}
+      finally{if(epoch===projectEpoch){state.busy='';draw();}}break;
+    }
     case 'confirm-transcript': await confirmProcessing('transcript');break;
     case 'confirm-recording': await confirmProcessing('recordings');break;
     case 'accept-item': case 'reject-item': await decideProposal([target.dataset.item],action==='accept-item'?'accept':'reject');break;
@@ -333,12 +406,12 @@ app.addEventListener('submit', async event => {
   const forms={'caption-edit-form':['correct_caption','caption'],'note-form':['annotate','note'],'rewrite-form':['set_rewrite','rewrite']};
   if(forms[event.target.id]) {
     const [type,field]=forms[event.target.id];const text=event.target.elements[field].value;
-    await mutate({type,blockId:state.refineBlock,text});state.refineDrafts={};draw();
+    await saveRefineField(type,field,text);
   }
   if(event.target.id==='word-edit-form' && state.selectedWordIds.length===1) {
-    await mutate({type:'correct_word',wordId:state.selectedWordIds[0],text:event.target.elements.wordText.value});
-    state.refineDrafts={};draw();
+    await saveRefineField('correct_word','wordText',event.target.elements.wordText.value,{wordId:state.selectedWordIds[0]});
   }
+  if(event.target.id==='brief-form'){const text=event.target.elements.brief.value,pid=state.project.id;if(await mutate({type:'set_brief',text})&&pid===state.project?.id&&state.briefDraft===text){state.briefDraft=null;draw();}}
   if(event.target.id==='recording-form') await uploadRecording();
   if (event.target.id === 'target-form') {
     const input = event.target.elements.target;
@@ -352,14 +425,18 @@ app.addEventListener('submit', async event => {
 });
 
 app.addEventListener('input', event => {
+  if(event.target.id==='task-brief')state.briefDraft=event.target.value;
   if (event.target.id === 'target-seconds') state.targetDraft = event.target.value;
   if(state.refineBlock && ['caption','note','rewrite','wordText'].includes(event.target.name)) {
-    state.refineDrafts[state.refineBlock] ||= {};state.refineDrafts[state.refineBlock][event.target.name]=event.target.value;
+    setDraft(state.refineDrafts,state.project.id,state.refineBlock,event.target.name,event.target.value);
+    const flag=document.getElementById('draft-status');if(flag)flag.textContent='有未保存输入 · 仅本页暂存';
+    const discard=document.querySelector('[data-action="discard-drafts"]');if(discard)discard.disabled=false;
   }
 });
 
 app.addEventListener('change', event => {
   const input = event.target;
+  if(input.id==='cut-index'){state.cutIndex=Number(input.value);state.cutLoop=null;draw();return;}
   if(input.id==='sample-picker'){state.selectedSampleId=input.value;draw();return;}
   if(['separate-import','separate-voice'].includes(input.id)){state.separateVoice=input.checked;return;}
   if(input.name==='recording'){state.recordingFile=input.files[0]||null;return;}
@@ -371,14 +448,14 @@ app.addEventListener('change', event => {
 
 async function startProcessing(kind) {
   if(!state.project || state.busy || ['queued','running'].includes(state.processingJob?.status))return;
-  const pid=state.project.id;state.busy='processing';state.notice=null;
+  const pid=state.project.id,epoch=projectEpoch;state.busy='processing';state.notice=null;
   if(kind==='suggestions')state.proposalPending=true;
   draw();
   try {
     const job=await request(`/api/projects/${pid}/processing/${kind}`,{method:'POST',body:{expectedRevision:state.project.revision,separateVoice:state.separateVoice}});
-    if(state.project?.id===pid){state.processingJob=job;pollProcessing(job.id,true);}
-  } catch(error){state.proposalPending=false;await handleFailure(error,()=>startProcessing(kind),pid);}
-  finally{state.busy='';draw();}
+    if(state.project?.id===pid&&epoch===projectEpoch){state.processingJob=job;pollProcessing(job.id,true);}
+  } catch(error){if(epoch===projectEpoch){state.proposalPending=false;await handleFailure(error,()=>startProcessing(kind),pid);}}
+  finally{if(epoch===projectEpoch){state.busy='';draw();}}
 }
 
 function pollProcessing(jid,immediate=false) {
@@ -395,6 +472,7 @@ function pollProcessing(jid,immediate=false) {
       }
       if(['failed','interrupted'].includes(job.status))state.proposalPending=false;
       draw();
+      if(job.kind==='suggestions'&&job.status==='succeeded'&&!state.refineBlock)document.querySelector('.proposal-v2')?.scrollIntoView({block:'start',behavior:'smooth'});
       if(['queued','running'].includes(job.status))pollProcessing(jid);
     }catch(error){if(epoch!==projectEpoch)return;state.proposalPending=false;showNotice(error.message,'error',()=>pollProcessing(jid,true));draw();}
   },immediate?0:1000);
@@ -402,35 +480,41 @@ function pollProcessing(jid,immediate=false) {
 
 async function confirmProcessing(kind) {
   if(state.busy||!state.processingJob)return;
-  const pid=state.project.id;state.busy='edit';draw();
+  if(kind==='transcript'&&projectHasDrafts(state.refineDrafts,state.project.id)){showNotice('先保存或放弃未保存输入，再确认新识别稿。');draw();return;}
+  const pid=state.project.id,epoch=projectEpoch;state.busy='edit';draw();
   try {
     const p=await request(`/api/projects/${pid}/${kind}/confirm`,{method:'POST',body:{expectedRevision:state.project.revision,jobId:state.processingJob.id}});
-    setProject(p);state.processingJob=null;state.refineDrafts={};state.selectedWordIds=[];state.proposalV2=null;
+    if(state.project?.id!==pid||epoch!==projectEpoch)return;
+    setProject(p);state.processingJob=null;if(kind==='transcript')delete state.refineDrafts[pid];state.selectedWordIds=[];state.proposalV2=null;
     showNotice(kind==='transcript'?'识别稿已确认，可以校对和按词精剪。':'补录已应用，请生成短片检查声音和字幕。','success');
-  }catch(error){await handleFailure(error,()=>confirmProcessing(kind),pid);}
-  finally{state.busy='';draw();}
+  }catch(error){if(epoch===projectEpoch)await handleFailure(error,()=>confirmProcessing(kind),pid);}
+  finally{if(epoch===projectEpoch){state.busy='';draw();}}
 }
 
 async function decideProposal(itemIds,decision) {
   if(state.busy||!itemIds.length)return;
-  const pid=state.project.id;state.busy='edit';draw();
+  const pid=state.project.id,epoch=projectEpoch;state.busy='edit';draw();
   try {
     const result=await request(`/api/projects/${pid}/proposal-decisions`,{method:'POST',body:{expectedRevision:state.project.revision,proposalId:state.proposalV2.id,itemIds,decision}});
+    if(state.project?.id!==pid||epoch!==projectEpoch)return;
     setProject(result.project);state.proposalV2=result.proposal;
-  }catch(error){await handleFailure(error,()=>decideProposal(itemIds,decision),pid);}
-  finally{state.busy='';draw();}
+  }catch(error){if(epoch===projectEpoch)await handleFailure(error,()=>decideProposal(itemIds,decision),pid);}
+  finally{if(epoch===projectEpoch){state.busy='';draw();}}
 }
 
 async function uploadRecording() {
+  if(state.health?.allowUploads===false){showNotice('公开样例模式不能上传补录。');draw();return;}
   if(state.busy||!state.recordingFile){showNotice('请选择WAV、MP3或M4A补录文件。');draw();return;}
-  const pid=state.project.id,form=new FormData();form.append('audio',state.recordingFile);
+  const pid=state.project.id,epoch=projectEpoch,bid=state.refineBlock,form=new FormData();form.append('audio',state.recordingFile);
   form.append('expectedRevision',state.project.revision);form.append('blockId',state.refineBlock);form.append('keepBackground',String(state.keepBackground));
   state.busy='recording';draw();
   try {
     const job=await request(`/api/projects/${pid}/recordings`,{method:'POST',body:form,timeout:120000});
+    if(state.project?.id!==pid||epoch!==projectEpoch)return;
+    if(job.projectId!==pid||job.intent?.blockId!==bid)throw new ApiError('补录任务与当前片段不匹配，请重新检查。');
     state.processingJob=job;state.refineBlock=null;state.recordingFile=null;pollProcessing(job.id,true);
-  }catch(error){await handleFailure(error,uploadRecording,pid);}
-  finally{state.busy='';draw();}
+  }catch(error){if(epoch===projectEpoch)await handleFailure(error,uploadRecording,pid);}
+  finally{if(epoch===projectEpoch){state.busy='';draw();}}
 }
 
 async function boot() {
@@ -460,3 +544,19 @@ async function boot() {
 }
 
 boot();
+
+window.addEventListener('beforeunload',event=>{
+  if(Object.keys(state.refineDrafts).some(pid=>projectHasDrafts(state.refineDrafts,pid))){event.preventDefault();event.returnValue='';}
+});
+app.addEventListener('keydown',event=>{
+  const dialog=document.querySelector('.refine-panel');if(!dialog)return;
+  if(event.key==='Escape'){event.preventDefault();state.refineBlock=null;state.selectedWordIds=[];draw();return;}
+  if(event.key==='Tab'){
+    const focusable=[...dialog.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea,select,a[href]')].filter(el=>el.getClientRects().length);
+    if(!focusable.length)return;
+    const first=focusable[0],last=focusable.at(-1);
+    if(event.shiftKey&&(document.activeElement===first||!dialog.contains(document.activeElement))){event.preventDefault();last.focus();}
+    else if(!event.shiftKey&&(document.activeElement===last||!dialog.contains(document.activeElement))){event.preventDefault();first.focus();}
+  }
+});
+window.addEventListener('resize',()=>{if(document.querySelector('.refine-panel')?.contains(document.activeElement))document.activeElement.scrollIntoView({block:'nearest'});});

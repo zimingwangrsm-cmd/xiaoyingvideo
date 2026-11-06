@@ -1,8 +1,8 @@
 {
   "schemaVersion": 2,
   "id": "real_tao_v2",
-  "title": "真人口播：Tao的语言与生活",
-  "description": "公开授权真人中文口播；本机自动识别字幕，可校对、剪词和整句重排。",
+  "title": "AI精简示例：语言背景一分钟简介",
+  "description": "真实口播128.2秒。演示预设：60秒以内，保留语言背景；开场和出生地为示范必留，可自行调整。",
   "origin": "recorded_sample",
   "label": "真人口播 · 本机识别字幕",
   "videoFile": "canonical.mp4",
@@ -28,5 +28,15 @@
     "computeType": "int8",
     "transcriptVerified": false,
     "elapsedSeconds": 28.92
-  }
+  },
+  "samplePreset": {
+    "targetMs": 60000,
+    "lockedBlockIds": [
+      "s01",
+      "s03"
+    ],
+    "brief": "一分钟个人语言背景简介。保留云南来源、泰国出生、八岁移居台湾的完整时间线与一句结束语；整组省略家庭成员工作、书店活动、地址和邀约，避免“这里”“还有”等失去前提。可以短于60秒，不必填满。"
+  },
+  "showcaseUrl": "/delivery",
+  "showcaseLabel": "已测纯AI建议：128.2秒 → 25.2秒（粗剪，字幕待校对）"
 }

@@ -1,3 +1,5 @@
+> 历史基线文档：测试数量与截图对应本轮优化前版本。当前状态见根README及deliverables/optimization/REVIEW_RESPONSE.md。
+
 # 口播精简 V2：产品目标、竞品研究与实际演示
 
 本报告附真实Demo截图与公开竞品资料。完整PDF/HTML、录屏及源码包见本地交付目录。

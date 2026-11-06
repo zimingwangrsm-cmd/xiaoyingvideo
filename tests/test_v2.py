@@ -132,6 +132,7 @@ def test_recording_too_long_is_rejected_before_transcription(app,tmp_path,monkey
     job=app[0].upload_recording(app[1],p['id'],p['revision'],'s01',audio,False)
     job=wait_processing(app,job)
     assert job['status']=='failed' and '请缩短' in job['error']
+    assert not list((app[0].store.project_dir(p['id'])/'recordings').glob('*'))
     assert app[0].get_project(app[1],p['id'])['revision']==p['revision']
 
 
@@ -188,3 +189,77 @@ def test_restart_marks_processing_interrupted_without_losing_edits(app):
         assert job['status']=='interrupted'
         assert reopened.get_project(app[1],p['id'])['edit']==p['edit']
     finally:reopened.close()
+
+
+def test_public_mode_recordings_are_rejected_without_writes(app):
+    p=seeded(app);app[0].settings.allow_uploads=False
+    folder=app[0].store.project_dir(p['id'])/'recordings'
+    before=list(folder.rglob('*')) if folder.exists() else []
+    audio=UploadFile(filename='take.wav',file=BytesIO(b'not read'))
+    expect_error('uploads_disabled',lambda:app[0].upload_recording(app[1],p['id'],p['revision'],'s01',audio,False),403)
+    assert (list(folder.rglob('*')) if folder.exists() else [])==before
+
+
+def test_recording_requests_reuse_only_identical_intent(app,monkeypatch):
+    p=seeded(app)
+    class PausedPool:
+        def submit(self,*a,**k):return None
+    monkeypatch.setattr(app[0],'processing_pool',PausedPool())
+    make=lambda body=b'first':UploadFile(filename='take.wav',file=BytesIO(body))
+    first=app[0].upload_recording(app[1],p['id'],p['revision'],'s01',make(),False)
+    same=app[0].upload_recording(app[1],p['id'],p['revision'],'s01',make(),False)
+    assert same['id']==first['id']
+    for bid,body,bgm in [('s02',b'first',False),('s01',b'other',False),('s01',b'first',True)]:
+        expect_error('processing_busy',lambda bid=bid,body=body,bgm=bgm:app[0].upload_recording(app[1],p['id'],p['revision'],bid,make(body),bgm),409)
+    assert len(list((app[0].store.project_dir(p['id'])/'recordings').iterdir()))==1
+    changed=app[0].store.read('projects',p['id']);changed['blocks']=changed['blocks'][1:]
+    app[0].store.write('projects',p['id'],changed)
+    assert app[0].get_processing(app[1],first['id'])['intent']==first['intent']
+
+
+def test_configured_upload_duration_limit_is_enforced(app,fixture_library):
+    service,owner,_=app;service.settings.max_source_seconds=1
+    video=UploadFile(filename='six.mp4',file=BytesIO((fixture_library/'abc/canonical.mp4').read_bytes()))
+    srt=UploadFile(filename='six.srt',file=BytesIO((fixture_library/'abc/sample.srt').read_bytes()))
+    p=service.import_files(owner,video,srt)
+    service.prepare_pool.shutdown(wait=True)
+    p=service.get_project(owner,p['id'])
+    assert p['state']=='failed' and '1 秒' in p['error']['message']
+
+
+def test_confirmed_transcript_has_usable_restore_point(app,monkeypatch):
+    from backend.app.schemas import RestoreTranscriptRequest
+    p=seeded(app);p=refine(app,p,'annotate',blockId='s01',text='重识别前的备注')
+    p=refine(app,p,'delete_words',wordIds=[p['words'][0]['id']]);before=copy.deepcopy(p)
+    payload={'cues':p['cues'],'words':[{'text':w['text'],'startMs':w['startMs'],'endMs':w['endMs']} for w in p['words']]}
+    monkeypatch.setattr(speech,'run_worker',lambda *a,**k:payload)
+    job=wait_processing(app,app[0].start_processing(app[1],p['id'],ProcessingRequest(expectedRevision=p['revision']),'transcribe'))
+    new=app[0].confirm_transcript(app[1],p['id'],ConfirmProcessingRequest(expectedRevision=p['revision'],jobId=job['id']))
+    assert not new['edit']['notes']
+    restored=app[0].restore_transcript(app[1],p['id'],RestoreTranscriptRequest(expectedRevision=new['revision'],snapshotId=new['transcriptRestorePoints'][0]['id']))
+    assert restored['edit']==before['edit'] and restored['words']==before['words']
+    assert restored['revision']>new['revision']
+
+
+def test_model_dependency_group_is_atomic_and_respects_locks(app):
+    p=seeded(app)
+    proposal=app[0]._proposal_v2(p,{'strategy':'关联句一起省略','items':[
+        {'type':'delete_block','blockId':'s01','blockIds':['s01','s02'],'reason':'后一句依赖前一句'}]},'local_llm')
+    assert len(proposal['items'])==1
+    out=app[0].decide_proposal(app[1],p['id'],ProposalDecisionRequest(expectedRevision=p['revision'],proposalId=proposal['id'],itemIds=['i01'],decision='accept'))
+    assert not set(['s01','s02']) & set(out['project']['edit']['keptBlockIds'])
+    p=action(app,out['project'],'undo');p=action(app,p,'lock',blockIds=['s02'])
+    rejected=app[0]._proposal_v2(p,{'strategy':'错误的关联删除','items':[
+        {'type':'delete_block','blockId':'s01','blockIds':['s01','s02'],'reason':'不得绕过必留'}]},'local_llm')
+    assert rejected['items']==[]
+
+
+def test_processing_parameters_are_part_of_active_request_identity(app,monkeypatch):
+    p=seeded(app)
+    class PausedPool:
+        def submit(self,*a,**k):return None
+    monkeypatch.setattr(app[0],'processing_pool',PausedPool())
+    request=ProcessingRequest(expectedRevision=p['revision'])
+    first=app[0].start_processing(app[1],p['id'],request,'transcribe')
+    assert app[0].start_processing(app[1],p['id'],request,'transcribe')['id']==first['id']
+    expect_error('processing_busy',lambda:app[0].start_processing(app[1],p['id'],request,'suggestions'),409)

@@ -56,3 +56,13 @@
 - GET `/api/projects/{id}/audio/vocals|background`、`/recordings/{recordingId}/audio`均校验项目会话。
 - GET `/api/artifacts/{id}/bundle`下载MP4/SRT/VTT/JSON交接ZIP，同样拒绝过期产物；公开样例附署名与许可。JSON不是第三方编辑器原生工程格式。
 - 本机模型URL只允许回环主机；处理任务真实失败可重试，LLM失败明确标记规则回退。VAD无可用语音时不生成假字幕。
+
+## 2026-11-06 独立审阅优化补充
+
+- `media.prepare_source(input_path, output_path, max_seconds=180)`：实际执行配置的 `MAX_SOURCE_SECONDS`，不得超过180秒。
+- 编辑动作 `set_brief{text}` 保存用户的剪辑主线。非空时，本地模型逐段评估相关性和前后依赖，程序按实测帧预算选择候选；目标为上限，不保证填满。候选中的 `delete_block` 可有 `blockIds` 依赖组，整组作为一项原子确认，不能包含必留或未知ID。
+- `POST /api/projects/{pid}/transcript/restore {expectedRevision,snapshotId}`：恢复所选识别快照及其编辑状态；新revision递增，当前状态先备份。Project增加 `transcriptRestorePoints` 元数据列表；恢复不直接恢复旧成片下载资格。
+- 补录 POST 在任何落盘前检查 `allowUploads`；public返回403。仅相同项目、revision、片段、文件名、文件内容SHA256、keepBackground的活动任务可复用；其余返回409 `processing_busy`，不创建孤立录音目录。失败任务清理新建录音目录。
+- 补录任务 DTO 的 `intent` 包含 blockId、blockText、fileName、keepBackground、原时长；确认结果标明补录时长。前端检查发起片段与返回片段一致。
+- 草稿是浏览器页内的 projectId/blockId/field 状态，切项目保留且隔离；仅对应成功且未被后续输入改变的字段清草稿。刷新/关闭由离开提示保护，未承诺磁盘草稿持久化。
+- local模式开放 `GET /delivery`、`GET /api/deliverables`、`GET /api/deliverables/{key}`；固定白名单，含文件大小与SHA256，MP4支持Range。public模式返回404。交付包不含private data目录或Cookie。

@@ -1,0 +1,19 @@
+{
+  "backendSuite": {
+    "passed": 63,
+    "seconds": 37.65
+  },
+  "finalRecordingIntentRegression": {
+    "passed": 5,
+    "deselected": 15,
+    "seconds": 6.21
+  },
+  "frontendTests": 14,
+  "build": "passed",
+  "modelManifestHashes": "all six ASR/Qwen files verified without revision updates",
+  "browserTests": "browser_validation.json",
+  "modelInference": "showcase_validation.json",
+  "http": "http_validation.json",
+  "note": "Local execution; no claim of GitHub CI or human listening.",
+  "legacyBrowserChecks": 21
+}

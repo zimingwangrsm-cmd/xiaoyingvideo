@@ -52,5 +52,10 @@ if __name__=='__main__':
     'changes':'转为H.264/AAC、30fps/48kHz；采用开头%.1f秒；必要时延长末帧覆盖语音；自动生成简体中文字幕。'%length,
     'transcriptVerified':False,'transcriptReview':'Automatic recognition; requires creator review.','recommendedLockedIds':[],
     'asr':{k:v for k,v in result.items() if k not in ['cues','words']}}
+  # Preserve the visible, editorial preset when refreshing generated ASR metadata.
+  previous=json.loads((folder/'manifest.json').read_text()) if (folder/'manifest.json').exists() else {}
+  if previous.get('samplePreset'):
+   for key in ['title','description','samplePreset','showcaseUrl','showcaseLabel']:
+    if key in previous:manifest[key]=previous[key]
   (folder/'manifest.json').write_text(json.dumps(manifest,ensure_ascii=False,indent=2)+'\n')
   print(sid,len(result['cues']),len(result['words']),flush=True)

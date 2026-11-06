@@ -1,0 +1,13 @@
+{
+  "checks": [
+    "local health and visible Tao editing preset",
+    "editing brief action and owned snapshot restore route",
+    "every delivery allowlist file downloaded and matched live SHA256/size",
+    "delivery MP4 Range 206 and unknown key 404",
+    "public multipart recording returns403 with no persistent recording directory; delivery routes return404"
+  ],
+  "deliveryFiles": 15,
+  "localMode": "local",
+  "publicMode": "public",
+  "note": "Actual current-version HTTP requests; source server only listens on loopback."
+}

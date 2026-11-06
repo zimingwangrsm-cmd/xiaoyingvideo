@@ -121,14 +121,16 @@ def _canonical(info):
         raise ValueError("规范视频音画起点不一致，请重新准备素材。")
 
 
-def prepare_source(input_path, output_path) -> dict:
+def prepare_source(input_path, output_path, max_seconds=MAX_SECONDS) -> dict:
+    if not 0 < max_seconds <= MAX_SECONDS:
+        raise ValueError("视频时长上限应大于0且不超过180秒。")
     info = probe_media(input_path)
     if "mp4" not in info["formatName"].split(","):
         raise ValueError("当前支持 MP4 视频，请换一个文件。")
     video_end = info["videoStartMs"] + info["videoDurationMs"]
     audio_end = (info["audioStartMs"] or 0) + (info["audioDurationMs"] or 0)
-    if max(video_end, audio_end) > MAX_SECONDS * 1000 + 1e-6:
-        raise ValueError("视频超过 180 秒，请先截短后再导入。")
+    if max(video_end, audio_end) > max_seconds * 1000 + 1e-6:
+        raise ValueError("视频超过 %s 秒，请先截短后再导入。" % max_seconds)
     if not info["hasAudio"]:
         raise ValueError("这段视频没有可用声音，无法演示口播剪辑。")
     if not all(info[key] for key in ("videoStartKnown", "audioStartKnown", "formatStartKnown")):

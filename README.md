@@ -1,99 +1,50 @@
 # 口播精简｜小影产品概念 Demo
 
-## V2更新
+本地口播编辑 Demo：自动字幕、文字校对、按词/按句剪辑、必留保护、本地模型建议和真实 MP4 导出。当前发布为 **2026-11-06 独立审阅优化版**，实现基线 `70e3b6e`，审阅来源 `0166eb6`；本轮提交见 Git 历史。
 
-GitHub版本包含源码、报告正文和公开截图。完整PDF/HTML、视频和交付包保存在本地`deliverables/v2/`。
+## 使用与验收
 
-已新增本机自动字幕、字幕/词语校对、口误备注、真实剪词、整句重排、人工补录、人声分离和本地模型逐项建议。使用与安装见[README_V2.md](README_V2.md)，[新版验收步骤](deliverables/v2/ACCEPTANCE_GUIDE.md)，[完整图文报告](deliverables/v2/PRODUCT_REPORT.md)。下面保留V1基础运行说明；V2的字幕文件为可选。
-
-独立本地网页，使用原始中文单人口播与SRT，以完整句组删减/恢复并导出真实MP4、SRT和修改记录。不是小影官方上线产品。
-
-## 明天验收
-
-服务端本机入口为 `http://127.0.0.1:8767`。详见 [五分钟验收步骤](deliverables/DEMO_ACCEPTANCE.md) 和 [实现审阅与修复](deliverables/IMPLEMENTATION_REVIEW.md)。同一数据目录只允许一个服务实例；启动脚本每次重建前端。
-
-## 启动
-
-Linux服务端（Windows可用WSL），Python 3.9以上、Node 20以上、FFmpeg/ffprobe。已验证的后端版本见requirements.txt。前端无外部依赖，不需要npm install。
+已准备的服务器入口：`http://127.0.0.1:8767`。在自己电脑的终端运行：
 
 ```bash
-cd /data1/wzm/wangyi/xiaoying_koubo
-python -m pip install -r requirements.txt
-cd frontend
-npm run build
-cd ..
-bash scripts/run_demo.sh
+ssh -N -L 8767:127.0.0.1:8767 <用户名>@<服务器地址>
 ```
 
-默认地址 `http://127.0.0.1:8765`。默认端口被占用时自动尝试随后19个端口；也可设置 `PORT=8766`。不终止其他进程。
-2026-11-06 已实际启动并通过 HTTP 与 Chrome 浏览器验收。本轮使用 `http://127.0.0.1:8767`；每次启动以终端打印地址为准。
+浏览器打开 `http://localhost:8767`。只转发 Web 端口，无需转发模型的8781端口。
 
-远程Linux可从自己的电脑建立转发（替换占位符）：
+- 直接看效果：打开 `http://localhost:8767/delivery`，对比 **128.2秒 → 25.2秒** 的真人原片和AI任务粗剪，下载报告与交付包。
+- 亲自操作：选择“AI精简示例：语言背景一分钟简介”，检查可编辑的主线和两段必留，再生成建议、确认、导出。CPU模型本例耗时约200秒；不同输入与负载会变化。
+- 示例保留开场、出生地、迁居与结束语，整组省略家庭工作、书店活动与邀约。它是任务导向粗剪；字幕专名仍待人工校对，不代表方言识别准确率或作者听审结论。
+
+[本轮验收步骤](deliverables/optimization/ACCEPTANCE_GUIDE.md) · [审阅逐项响应](deliverables/optimization/REVIEW_RESPONSE.md) · [真实模型结果](deliverables/optimization/SHOWCASE.md) · [需求范围表](deliverables/optimization/REQUIREMENTS_TRACE.md)
+
+## 启动与复现
+
+已有模型与素材时不要重新生成；启动两个终端：
 
 ```bash
-ssh -L 8765:127.0.0.1:8765 <用户名>@<服务器地址>
+bash scripts/run_local_model.sh
+# 另一个终端：
+DATA_DIR=data/acceptance_20261106 PORT=8767 bash scripts/run_v2.sh
 ```
 
-然后在本机浏览器打开转发后的地址；转发端口需与实际服务端口一致。
-
-## 素材与能力
-
-- 首版输入：MP4≤100MB、≤180秒、含音轨；UTF-8/BOM SRT，完整句标点、无重叠越界。
-- 输出：30fps、48kHz、H264/AAC、不超过720p档位，保持画幅；MP4字幕另附SRT，播放器使用同源VTT。
-- 样例是原创脚本＋离线eSpeak NG普通中文合成旁白＋示例文字卡，136.567秒；不是用户真实经历或真人口播。
-- `MODEL_MODE=rules`无需密钥。完整样例提供绑定视频/字幕哈希的重复提示；新输入采用保守规则。模型适配器尚无真实服务调用验证，私人上传默认不外发。
-- `fixtures/README.md`记录素材来源和验证；没有人工逐字听审或真人切口验证。
-- 首版使用原生ES modules代替React/Vite：离线缺少完整构建依赖，保留全部产品行为，Node只做静态构建与检查。
-
-## 复现验证
+首次安装、锁定模型版本及依赖见 [README_V2.md](README_V2.md)。只体验已备样例、手工剪辑与规则建议，可用 `PORT=8767 bash scripts/run_demo.sh`，无需启动本地模型。启动端口冲突时以终端实际输出为准；同一数据目录只运行一个服务。
 
 ```bash
-python -m pip install -r requirements-dev.txt
 python -m pytest tests -q
-cd frontend && npm run check
+cd frontend
+npm run check
+npm run build
 ```
 
-在工程根运行 `python scripts/export_examples.py`，可通过同一后端服务层生成90秒、60秒目标和全部恢复三个真实产物，无须HTTP。它证明媒体和状态链路，不替代浏览器验收。
+本轮实测：**63项后端、14项前端检查通过**；桌面草稿/失败/迟到响应/跨项目/键盘、多项建议以及手机尺寸完整任务通过。真实Qwen推理记录与确定性交互fixture分别存档，不混算。浏览器任务是Chromium模拟，未替代实机软键盘和人工听审。完整证据见 [交付索引](deliverables/optimization/EVIDENCE_INDEX.json)。另在规则模式重跑21组旧浏览器流程通过。历史V2录屏/57项测试结论只对应其原版本。
 
-生成样例需要Pillow和系统libespeak-ng；已附生成好的公开样例。重新生成：`python scripts/prepare_sample.py`。正常使用成品无需TTS依赖。
+## 数据和交付
 
-## 数据与部署
+服务只监听回环，使用匿名会话隔离。`APP_MODE=public`禁用视频与补录上传，不等于完成公网部署加固。私人状态、模型、缓存不提交Git；本地 `/delivery` 只开放固定白名单报告和公开授权媒体，不开放data目录。
 
-项目状态和上传在data中，以匿名会话隔离；不公开静态托管data。前端dist与API由同一进程提供。APP_MODE=public时只开放样例、关闭上传。无公开部署或收费服务开通。
-用户指定同步仓库：https://github.com/zimingwangrsm-cmd/xiaoyingvideo 。源码包排除data、密钥、缓存与临时TTS产物。录屏、截图、PDF与媒体文件保留在本地交付目录，不提交大文件。
+GitHub提供源码、文字报告、验证JSON与检查过的截图；大视频/PDF/离线HTML/ZIP通过同一SSH端口的交付中心下载，当前没有公网下载站点。[数据许可及交接边界](deliverables/optimization/DATA_AND_INTEGRATION.md) · [人工质量评估协议](deliverables/optimization/QUALITY_PROTOCOL.md)
 
-## 当前交付状态
+人工补录是同声线生成的替代范围；原生剪辑工程集成、真人新录补录听审、真实用户研究尚未完成。Wikitongues真人媒体及剪辑衍生内容为CC BY-SA 4.0，须保留署名和许可。
 
-43项后端/媒体/服务层测试和9项前端状态/模板测试已通过。最新真实 HTTP、21组 Chrome 浏览器检查、实际服务重启验收，详见 `deliverables/VALIDATION.md`。171.44秒带播放声音的真实录屏和截图位于本地 `deliverables/`。个人经历一题仍等待用户真实输入。
-
-## HTTP、浏览器与录屏复现
-
-也可在允许socket的普通终端运行一条命令，自动构建、启动、HTTP检查并保留服务供浏览器操作：
-
-```bash
-cd /data1/wzm/wangyi/xiaoying_koubo
-python scripts/local_acceptance.py
-```
-
-只检查后退出：追加`--check-only`。只停止本脚本创建的进程，不会结束未知服务。详细结果写入deliverables/local_run_receipt.json与http_check_console.log。已实际通过；回环检查显式禁用环境 HTTP 代理，避免本地请求被错误转发。
-
-启动后以终端打印地址为准，执行 `python scripts/check_http.py --url http://127.0.0.1:8765`。只有所有检查成功才生成 `deliverables/http_validation.json`。本轮成功证据见该文件；浏览器验收单独记在 `browser_validation.json`。
-
-
-浏览器脚本需要 Playwright 1.55.0（或兼容版本）和支持 H.264/AAC 的 Chrome。本机缓存的 Chromium 缺少这两种解码器，已使用临时目录中的 Chrome 157.0.8103.38 实测。设置 `PLAYWRIGHT_MODULE` 为可用模块路径，`CHROME_EXECUTABLE` 为浏览器路径，`APP_URL` 为实际回环地址。配置目录不可写时，可将 `XDG_CONFIG_HOME`、`XDG_CACHE_HOME` 指向临时目录。
-
-```bash
-# 独立验收数据；只在此验收服务中开启明确的故障注入。
-DATA_DIR=data/acceptance_20261106 DEMO_TEST_FAILURES=true python scripts/local_acceptance.py --port 8767
-# 另一个终端，先设置上文浏览器环境变量：
-node scripts/check_browser.cjs
-# 停止上述服务，再以同一 DATA_DIR 和同一端口启动（不再启用故障注入）：
-DATA_DIR=data/acceptance_20261106 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8767 --workers 1
-node scripts/check_restart.cjs
-```
-
-`check_browser.cjs` 真正点击界面、上传文件、播放媒体并下载；失败用例仅通过既有开发测试请求头触发，未伪造 HTTP 返回。Cookie 和重启恢复状态仅写入被忽略的 `data/browser_acceptance/`。
-
-录屏使用独立 Xvfb（1440×1000）、PulseAudio 与 FFmpeg。设置 `XVFB_EXECUTABLE` 为可用 Xvfb 路径，运行 `node scripts/record_walkthrough.cjs`；脚本在同一进程环境启动虚拟桌面和采集器，避免跨 IPC 命名空间的共享内存问题。脚本采集真实桌面和隔离的浏览器播放声音，包含实际渲染等待，无剪接、倍速或替换配音；每次会覆盖 `deliverables/walkthrough.mp4`。本地样例已经准备好，不要重生成现有样例。
-
-五页草稿由 `scripts/build_brief.py` 生成，需要ReportLab及脚本所用中文字体；本机可用 `/usr/bin/python3 scripts/build_brief.py`。截图、录屏、PDF、原MP4与本地source.zip不随Git同步，交付时使用本地文件。
+历史材料：[V1运行记录](deliverables/history/README_V1.md)、[V2基线产品报告](deliverables/v2/PRODUCT_REPORT.md)、[原独立审阅](deliverables/review/INDEPENDENT_REVIEW_2026-11-06.md)。历史数据不覆盖本轮结论。

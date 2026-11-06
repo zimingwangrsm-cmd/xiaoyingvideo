@@ -1,5 +1,6 @@
 """Revisioned V2 editing and recoverable asynchronous local model jobs."""
 import copy
+import hashlib
 import json
 import shutil
 import time
@@ -13,7 +14,7 @@ from .media import _run, sha256_file
 from .storage import atomic_json, new_id
 from .timeline import write_srt, write_vtt
 
-V2_ACTIONS={'correct_caption','correct_word','annotate','delete_words','restore_words','move_block','set_rewrite','restore_audio'}
+V2_ACTIONS={'correct_caption','correct_word','annotate','delete_words','restore_words','move_block','set_rewrite','restore_audio','set_brief'}
 
 
 class V2ServiceMixin:
@@ -36,7 +37,7 @@ class V2ServiceMixin:
         return {'automaticCaptions':speech.available(self.settings),
                 'localSuggestions':bool(self.settings.local_llm_url),
                 'voiceSeparation':speech.available(self.settings),'wordEditing':True,'sentenceReorder':True,
-                'recordingReplacement':True,'voiceCloning':False}
+                'recordingReplacement':self.settings.allow_uploads,'voiceCloning':False}
 
     def _upgrade(self, project):
         if project.get('schemaVersion',1)<2:
@@ -106,12 +107,18 @@ class V2ServiceMixin:
             self._editable(project,request.expectedRevision)
             for path in (self.store.root/'processing').glob('*.json'):
                 existing=json.loads(path.read_text())
-                if existing['projectId']==pid and existing['kind']==kind and existing['status'] in ['queued','running']:
-                    return self.processing_dto(existing)
+                if existing['projectId']==pid and existing['status'] in ['queued','running']:
+                    if existing['kind']==kind and existing.get('_options')==request.dict(exclude_none=True):
+                        return self.processing_dto(existing)
+                    raise AppError('processing_busy','该项目已有不同的处理任务，请等待完成后再操作。',409)
             jid=new_id()
             job={'id':jid,'projectId':pid,'kind':kind,'status':'queued','phase':'waiting',
                  'baseRevision':project['revision'],'createdAt':time.time(),'error':None,'result':None,
                  '_owner':owner,'_options':request.dict(exclude_none=True)}
+            if kind=='recording':
+                block=next(b for b in project['blocks'] if b['id']==request.blockId)
+                job['_intent']={'blockId':request.blockId,'blockText':block['text'],'fileName':request.fileName or '补录',
+                    'keepBackground':request.keepBackground,'originalDurationMs':(block['clipEndFrame']-block['clipStartFrame'])/.03}
             self.store.write('processing',jid,job)
             project['latestProcessingId']=jid;self.store.write('projects',pid,project)
             self.futures[jid]=self.processing_pool.submit(self._process,job,copy.deepcopy(project))
@@ -126,6 +133,14 @@ class V2ServiceMixin:
                 value['baseRevision']=value['result']['baseRevision']
         current=self.store.read('projects',job['projectId'])
         value['isCurrent']=current['revision']==value['baseRevision']
+        if job['kind']=='recording':
+            if job.get('_intent'):value['intent']=copy.deepcopy(job['_intent'])
+            else:
+                # Legacy jobs may outlive a replaced transcription grid.
+                options=job['_options'];block=next((b for b in current['blocks'] if b['id']==options['blockId']),None)
+                value['intent']={'blockId':options['blockId'],'blockText':block['text'] if block else '原片段已变更，请重新补录。',
+                    'fileName':options.get('fileName','补录'),'keepBackground':options.get('keepBackground',False),
+                    'originalDurationMs':(block['clipEndFrame']-block['clipStartFrame'])/.03 if block else 0}
         value['elapsedSeconds']=round((job.get('finishedAt') or time.time())-job['createdAt'],1)
         return value
 
@@ -166,6 +181,8 @@ class V2ServiceMixin:
             else:raise ValueError('未知处理类型。')
             job.update(status='succeeded',phase='done',finishedAt=time.time())
         except Exception as exc:
+            if job['kind']=='recording':
+                shutil.rmtree(self.store.project_dir(pid)/'recordings'/job['_options']['recordingId'],ignore_errors=True)
             job.update(status='failed',finishedAt=time.time(),error=str(exc) if isinstance(exc,ValueError) else '本机处理未完成，请重试；已保存的编辑仍保留。')
         self.store.write('processing',job['id'],job)
 
@@ -182,7 +199,7 @@ class V2ServiceMixin:
                 raise AppError('not_ready','识别结果尚不可用。',409)
             if job['baseRevision']!=project['revision']:
                 raise AppError('transcript_stale','识别期间项目已修改，请重新识别，避免覆盖编辑。',409)
-            atomic_json(self.store.project_dir(pid)/('before-transcript-'+job['id']+'.json'),project)
+            self._save_transcript_snapshot(project,job['id'])
             old_revision=project['revision'];old_target=project['edit']['targetMs']
             # Explicit confirmation replaces the editing grid; retain the complete previous snapshot on disk.
             project['_history']=[];project['edit']={'targetMs':old_target,'keptBlockIds':[], 'lockedBlockIds':[],
@@ -193,21 +210,54 @@ class V2ServiceMixin:
             self.store.write('projects',pid,project)
             return self.dto(project)
 
+    def _save_transcript_snapshot(self, project, sid=None):
+        sid=sid or new_id()
+        atomic_json(self.store.project_dir(project['id'])/('before-transcript-'+sid+'.json'),project)
+        points=project.setdefault('_transcriptRestorePoints',[])
+        points.insert(0,{'id':sid,'revision':project['revision'],'createdAt':time.strftime('%Y-%m-%d %H:%M:%S')})
+        project['_transcriptRestorePoints']=points[:20]
+        return sid
+
+    def restore_transcript(self,owner,pid,request):
+        from .service import AppError
+        with self.store.locked(pid):
+            p=self._owned('projects',pid,owner);self._editable(p,request.expectedRevision)
+            if not self.store.valid_id(request.snapshotId):raise ValueError('版本编号无效。')
+            path=self.store.project_dir(pid)/('before-transcript-'+request.snapshotId+'.json')
+            if not path.is_file():raise AppError('not_found','找不到这个恢复版本。',404)
+            old=json.loads(path.read_text())
+            if old.get('_owner')!=owner or old['id']!=pid or old['source']['sha256']!=p['source']['sha256']:
+                raise AppError('not_found','恢复版本不属于当前素材。',404)
+            self._save_transcript_snapshot(p)
+            for field in ['edit','cues','blocks','words','transcriptionInfo','_verifiedSampleRules','_transcriptSha256']:
+                if field in old:p[field]=copy.deepcopy(old[field])
+                else:p.pop(field,None)
+            p['_history']=[];p['revision']+=1;p['latestProcessingId']=None
+            # Render IDs remain as immutable older versions; downloads require the restored revision to be rendered anew.
+            directory=self.store.project_dir(pid)
+            (directory/'source.srt').write_text(write_srt(p['cues']),encoding='utf-8')
+            (directory/'source.vtt').write_text(write_vtt(p['cues']),encoding='utf-8')
+            self.store.write('projects',pid,p)
+            return self.dto(p)
+
     def _proposal_v2(self, project, answer, source):
         edit=editing.defaults(project);blocks={b['id']:b for b in project['blocks']}
         words={w['id']:w for w in editing.all_words(project)};items=[];used=set()
         simulation=copy.deepcopy(project);simulation['schemaVersion']=2;simulation['edit']=editing.defaults(simulation)
         current_ms=sum(s['sourceEndFrame']-s['sourceStartFrame'] for s in editing.timeline(project)[0])/.03
-        for raw in answer.get('items',[])[:12]:
+        for raw in answer.get('items',[])[:32]:
             if not isinstance(raw,dict):continue
             kind=raw.get('type');bid=raw.get('blockId');reason=raw.get('reason')
             if bid not in blocks or not isinstance(reason,str) or bid in used:continue
             if bid in edit['lockedBlockIds'] and kind not in ['move_block','caption_correction']:continue
             action={'type':kind,'blockId':bid}
+            group=[bid]
             if kind=='delete_block':
-                if bid not in edit['keptBlockIds']:continue
-                action={'type':'delete','blockIds':[bid]}
-                after='删除这一完整句组'
+                group=raw.get('blockIds',[bid])
+                if not isinstance(group,list) or not group or any(i not in edit['keptBlockIds'] or i in used or i in edit['lockedBlockIds'] for i in group):continue
+                if len(group)!=len(set(group)) or bid not in group:continue
+                action={'type':'delete','blockIds':group}
+                after='整组删除：'+', '.join(group)
             elif kind=='delete_words':
                 ids=raw.get('wordIds',[])
                 if not ids or any(i not in words or words[i]['blockId']!=bid for i in ids):continue
@@ -224,15 +274,15 @@ class V2ServiceMixin:
             trial=copy.deepcopy(simulation)
             try:
                 before_ms=sum(s['sourceEndFrame']-s['sourceStartFrame'] for s in editing.timeline(trial)[0])/.03
-                if kind=='delete_block':trial['edit']['keptBlockIds']=[i for i in trial['edit']['keptBlockIds'] if i!=bid]
+                if kind=='delete_block':trial['edit']['keptBlockIds']=[i for i in trial['edit']['keptBlockIds'] if i not in group]
                 else:editing.apply_edit(trial,action)
                 spans,_=editing.timeline(trial)
                 if not spans:continue
                 after_ms=sum(s['sourceEndFrame']-s['sourceStartFrame'] for s in spans)/.03
             except ValueError:continue
             simulation=trial
-            used.add(bid)
-            items.append({'id':'i%02d'%(len(items)+1),'blockId':bid,'type':kind,'before':blocks[bid]['text'],
+            used.update(group)
+            items.append({'id':'i%02d'%(len(items)+1),'blockId':bid,'blockIds':group,'type':kind,'before':'\n'.join(blocks[i]['text'] for i in group),
                           'after':after,'reason':reason[:500],'status':'pending','action':action,
                           'durationDeltaMs':round(after_ms-before_ms,3),'riskHints':blocks[bid].get('riskHints',[]),
                           'requiresRecording':kind=='rewrite'})
@@ -263,8 +313,8 @@ class V2ServiceMixin:
                 if request.decision=='accept':
                     action=item['action']
                     if action['type']=='delete':
-                        if item['blockId'] in project['edit']['lockedBlockIds']:raise ValueError('不能删除必留内容。')
-                        project['edit']['keptBlockIds']=[i for i in project['edit']['keptBlockIds'] if i!=item['blockId']]
+                        if set(action['blockIds']) & set(project['edit']['lockedBlockIds']):raise ValueError('不能删除必留内容。')
+                        project['edit']['keptBlockIds']=[i for i in project['edit']['keptBlockIds'] if i not in action['blockIds']]
                     else:editing.apply_edit(project,action)
                     item['status']='accepted'
                 else:item['status']='rejected'
@@ -282,22 +332,50 @@ class V2ServiceMixin:
     def upload_recording(self,owner,pid,expected_revision,bid,audio,keep_background):
         from .schemas import ProcessingRequest
         from .service import AppError
+        if not self.settings.allow_uploads:
+            raise AppError('uploads_disabled','当前为公开样例模式，不能上传补录；请在本地模式操作。',403)
         with self.store.locked(pid):
             project=self._owned('projects',pid,owner);self._editable(project,expected_revision)
             if bid not in {b['id'] for b in project['blocks']}:raise ValueError('片段不存在。')
             if bid in project['edit']['lockedBlockIds']:raise ValueError('请先取消该段必留，再替换声音。')
-            if Path(audio.filename or '').suffix.lower() not in ['.wav','.mp3','.m4a']:raise ValueError('补录支持WAV、MP3或M4A。')
-            rid=new_id();folder=self.store.project_dir(pid)/'recordings'/rid;folder.mkdir(parents=True)
-            total=0
-            with (folder/'upload.audio').open('wb') as out:
-                while True:
-                    chunk=audio.file.read(1024*1024)
-                    if not chunk:break
-                    total+=len(chunk)
-                    if total>30*1024*1024:raise ValueError('补录音频不能超过30 MB。')
-                    out.write(chunk)
-            request=ProcessingRequest(expectedRevision=expected_revision,blockId=bid,recordingId=rid,keepBackground=keep_background)
-            return self.start_processing(owner,pid,request,'recording')
+            filename=Path((audio.filename or '').replace('\\','/')).name
+            if Path(filename).suffix.lower() not in ['.wav','.mp3','.m4a']:raise ValueError('补录支持WAV、MP3或M4A。')
+            active=None
+            for file in (self.store.root/'processing').glob('*.json'):
+                item=json.loads(file.read_text())
+                if item['projectId']==pid and item['status'] in ['queued','running']:
+                    active=item;break
+            if active:
+                options=active.get('_options',{})
+                if (active['kind']!='recording' or active['baseRevision']!=expected_revision or
+                    options.get('blockId')!=bid or options.get('keepBackground')!=keep_background or
+                    options.get('fileName')!=filename):
+                    raise AppError('processing_busy','已有不同的补录或处理任务，请等待完成后再上传。',409)
+            # Hash bounded input before creating any persistent file or directory.
+            digest=hashlib.sha256();total=0;audio.file.seek(0)
+            while True:
+                chunk=audio.file.read(1024*1024)
+                if not chunk:break
+                total+=len(chunk)
+                if total>30*1024*1024:raise ValueError('补录音频不能超过30 MB。')
+                digest.update(chunk)
+            audio.file.seek(0)
+            upload_sha=digest.hexdigest()
+            if active:
+                if active['_options'].get('uploadSha256')==upload_sha:return self.processing_dto(active)
+                raise AppError('processing_busy','已有另一份补录正在处理，请等待完成后再上传。',409)
+            if keep_background and not (self.store.project_dir(pid)/'separated_background.wav').is_file():
+                raise ValueError('保留背景音前，请先完成人声分离。')
+            rid=new_id();folder=self.store.project_dir(pid)/'recordings'/rid
+            try:
+                folder.mkdir(parents=True)
+                with (folder/'upload.audio').open('wb') as out:shutil.copyfileobj(audio.file,out,1024*1024)
+                request=ProcessingRequest(expectedRevision=expected_revision,blockId=bid,recordingId=rid,
+                    keepBackground=keep_background,fileName=filename,uploadSha256=upload_sha)
+                return self.start_processing(owner,pid,request,'recording')
+            except BaseException:
+                shutil.rmtree(folder,ignore_errors=True)
+                raise
 
     def _prepare_recording(self, project, job, work, phase):
         options=job['_options'];rid=options['recordingId'];bid=options['blockId']
@@ -325,6 +403,7 @@ class V2ServiceMixin:
             _run(['ffmpeg','-v','error','-nostdin','-y','-i',str(background),'-i',str(voice),'-filter_complex',graph,'-map','[out]','-ar','48000',str(mixed)],90)
         else:shutil.copyfile(voice,mixed)
         return {'id':rid,'blockId':bid,'words':words,'text':''.join(c['text'] for c in result['cues']),
+                'fileName':options['fileName'],'blockText':block['text'],'uploadSha256':options['uploadSha256'],
                 'sourceDurationMs':seconds*1000,'durationMs':allowed*1000,'keepBackground':options.get('keepBackground',False),
                 'sha256':sha256_file(mixed),'audioUrl':'/api/projects/%s/recordings/%s/audio'%(project['id'],rid)}
 

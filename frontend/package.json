@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "build": "node build.mjs",
-    "check": "node --check src/app.js && node --check src/views.js && node --check src/model.js && node tests/model.test.js && node tests/views.test.js"
+    "check": "node --check src/app.js && node --check src/views.js && node --check src/v2views.js && node --check src/model.js && node --check src/drafts.js && node --check src/dom.js && node --test tests/*.test.js"
   },
-  "engines": { "node": ">=20" }
+  "engines": {
+    "node": ">=20"
+  }
 }

@@ -32,7 +32,7 @@ def download(repo,revision,name,folder,metadata,workers):
  else:
   start=part.stat().st_size if part.exists() else 0
   if start>size:raise RuntimeError('Unexpected partial size for '+name)
-  chunk_dir=folder/(name+'.ranges');chunk_dir.mkdir(exist_ok=True)
+  chunk_dir=folder/(name+'.ranges.'+revision);chunk_dir.mkdir(exist_ok=True)
   chunk_size=16*1024*1024
   ranges=[(a,min(size-1,a+chunk_size-1)) for a in range(start,size,chunk_size)]
   done=[start]
@@ -63,12 +63,18 @@ def download(repo,revision,name,folder,metadata,workers):
  print('Ready',name,flush=True)
 
 if __name__=='__main__':
- p=argparse.ArgumentParser();p.add_argument('--kind',choices=['asr','llm','all'],default='all');p.add_argument('--workers',type=int,default=8);args=p.parse_args()
+ p=argparse.ArgumentParser();p.add_argument('--kind',choices=['asr','llm','all'],default='all');p.add_argument('--workers',type=int,default=8);p.add_argument('--update',action='store_true',help='Explicitly select current upstream revisions instead of the acceptance manifest');p.add_argument('--manifest',type=Path,default=ROOT/'deliverables/v2/runtime_manifest.json');args=p.parse_args()
  records=[]
  for kind,(repo,folder,names) in CATALOG.items():
   if args.kind not in ['all',kind]:continue
-  with urllib.request.urlopen('https://huggingface.co/api/models/'+repo+'?blobs=true',timeout=60) as response:meta=json.load(response)
-  siblings={i['rfilename']:i for i in meta['siblings']}
+  if args.update:
+   with urllib.request.urlopen('https://huggingface.co/api/models/'+repo+'?blobs=true',timeout=60) as response:meta=json.load(response)
+   siblings={i['rfilename']:i for i in meta['siblings']}
+  else:
+   pinned=[m for m in json.loads(args.manifest.read_text())['models'] if m['repo']==repo]
+   if len(pinned)!=len(names) or len({m['revision'] for m in pinned})!=1:raise RuntimeError('Incomplete pinned model manifest')
+   meta={'sha':pinned[0]['revision']}
+   siblings={Path(m['file']).name:{'lfs':{'sha256':m['sha256']}} for m in pinned}
   for name in names:
    download(repo,meta['sha'],name,ROOT/'models'/folder,siblings[name],max(1,min(8,args.workers)))
    records.append({'repo':repo,'revision':meta['sha'],'file':folder+'/'+name,'sha256':digest(ROOT/'models'/folder/name)})

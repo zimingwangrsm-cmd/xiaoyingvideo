@@ -1,0 +1,27 @@
+{
+  "baseCommit": "1c2ed70a949db7de3c1b156539810bcc1fd4e067",
+  "python": "3.12.14",
+  "ffmpeg": "7.1.5-0+deb13u1",
+  "node": "24.22.1",
+  "packages": {
+    "fastapi": "0.100.0",
+    "pydantic": "1.10.26",
+    "uvicorn": "0.23.1",
+    "python-multipart": "0.0.6",
+    "pytest": "8.3.5",
+    "httpx": "0.24.1"
+  },
+  "frontendTests": 16,
+  "frontendBuild": "passed",
+  "compileall": "passed",
+  "browser": "not rerun; execution environment restriction",
+  "speechInference": "test doubles only; real models not rerun",
+  "deployment": "none",
+  "backendTests": 67,
+  "backendResult": "67 passed, 1 deprecation warning",
+  "backendSeconds": 43.8,
+  "httpRegression": "passed with pinned FastAPI/Pydantic; real import, edit, FFmpeg export and response-byte verification",
+  "warnings": [
+    "Starlette TestClient references deprecated anyio.abc.BlockingPortal; non-failing."
+  ]
+}

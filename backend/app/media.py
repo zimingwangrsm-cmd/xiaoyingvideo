@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 from fractions import Fraction
+from functools import lru_cache
 
 FPS = 30
 SAMPLE_RATE = 48000
@@ -102,8 +103,18 @@ def _temp_path(output_path):
     return Path(temporary)
 
 
+@lru_cache(maxsize=1)
+def _cfr_args():
+    # Keep the explicit CFR fix on the deployed FFmpeg 4.2 as well as FFmpeg 7.
+    help_text=_run(['ffmpeg','-hide_banner','-h','full'],30).decode('utf-8','replace')
+    return ['-r',str(FPS)]+(['-fps_mode','cfr'] if '-fps_mode' in help_text else ['-vsync','cfr'])
+
+
 def _encoder_args():
-    return ["-c:v", "libx264", "-threads", "2", "-preset", "veryfast", "-crf", "21",
+    # concat uses a microsecond timebase. FFmpeg 7 may otherwise write an
+    # incorrect last-frame duration / average FPS despite 30 fps input.
+    # Set the output grid explicitly; retain strict frame-count validation.
+    return _cfr_args()+["-c:v", "libx264", "-threads", "2", "-preset", "veryfast", "-crf", "21",
             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-ar", "48000",
             "-movflags", "+faststart", "-map_metadata", "-1", "-metadata:s:v:0", "rotate=0"]
 

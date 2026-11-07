@@ -6,7 +6,19 @@
 
 - 原隔离复验：b83784d，以下失败与诊断结果仅对应此版本。
 - 后续 main：1c2ed70，新增每句 60 秒补录、末帧延长和字幕顺延；发布记录声明 65 项后端与 16 项前端检查，属其原环境结果。
-- 本轮兼容性修复：基于 1c2ed70，在独立修复分支进行，最终提交与复验结果待补。没有把旧版失败直接推断为新版所有环境失败。
+- 本轮兼容性修复：基于 1c2ed70，独立分支 fix/runtime-compat-20261107 的 538fa8e 已完成下述隔离复验。没有把旧版失败直接推断为新版所有环境失败。
+
+## 本轮兼容性修复复验
+
+修复基于 main `1c2ed70a949db7de3c1b156539810bcc1fd4e067`，修复提交：[538fa8e9da2dcaaec3b25520dc7360bbde036eb9](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/commit/538fa8e9da2dcaaec3b25520dc7360bbde036eb9)。
+
+- Python 3.12.14、FFmpeg 7.1.5、FastAPI 0.100.0、Pydantic 1.10.26。
+- 后端 67 项通过，43.80 秒；一个非失败的 AnyIO 弃用警告。
+- 前端 16 项检查、静态构建与 compileall 通过。
+- FastAPI TestClient 真实导入 → 删除中间句 → FFmpeg 导出 120 帧、30fps → 下载字节比对通过。
+- 含 60 秒补录回归；语音推理使用测试替身，未把确定性测试写成真实 ASR/LLM 验收。
+
+这是修复分支的隔离复验结果，不是 main 已合并、目标机器已部署、真实浏览器已完成全链路或真人听审通过。最终 Demo 仍需按 REVIEW_AND_HANDOFF.md 在交付环境检查。
 
 ## 原样测试
 
@@ -39,3 +51,10 @@ FastAPI TestClient 调用真实服务和 FFmpeg，没有模型推理，仅用规
 - 此问题在旧实现中已有，不能称为句子录音或新版布局引入的回归。
 - 未证明所有 FFmpeg 版本或既有部署环境都失败。
 - 修复复验需独立列明版本与结果，最终 Demo 还需在实际交付环境检查浏览器播放、补录和下载。
+
+## 修复原始报告
+
+- [兼容性修复说明](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/blob/538fa8e9da2dcaaec3b25520dc7360bbde036eb9/deliverables/compatibility/README.md)
+- [机器可读验证记录](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/blob/538fa8e9da2dcaaec3b25520dc7360bbde036eb9/deliverables/compatibility/validation.json)
+
+此提交没有 GitHub Actions 运行，不宣称远端 CI 通过。

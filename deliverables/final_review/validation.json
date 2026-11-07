@@ -1,0 +1,36 @@
+{
+  "sourceCommit": "cfe5c08b26157104104a6f64ea5a0e07fb039665",
+  "deliveryCommit": "3555893aba12b0e82c2f0ffd405db9d351557af6",
+  "manifestChecked": 36,
+  "manifestFailures": 0,
+  "brokenHtmlLocalPaths": 0,
+  "deliveryVsMainDifferences": 0,
+  "fullVideoDecode": [
+    "demo_walkthrough.mp4",
+    "demo_result.mp4"
+  ],
+  "originalBackendTests": 67,
+  "frontendTests": 16,
+  "frontendBuild": "passed",
+  "startupPolicyTests": 3,
+  "liveServer": "run_demo.sh/Uvicorn, loopback only",
+  "httpFlow": "health, home, import supplied MP4+SRT, delete block, render, download MP4/SRT/JSON, source Range=206",
+  "reexport": {
+    "seconds": 6.5,
+    "frames": 195,
+    "fps": 30,
+    "video": "h264",
+    "audio": "aac",
+    "fullDecode": "passed"
+  },
+  "browser": "not independently exercised: runtime socket restriction and cloud browser file-URL policy",
+  "models": "not rerun",
+  "deployment": "none",
+  "fixedBackendTests": 70,
+  "backendSeconds": 40.24,
+  "backendWarnings": [
+    "Starlette/AnyIO deprecated BlockingPortal alias; non-failing"
+  ],
+  "compileall": "passed",
+  "shellSyntax": "passed"
+}

@@ -2,6 +2,10 @@
 
 本地口播编辑 Demo：自动字幕、文字校对、按词/按句剪辑、必留保护、本地模型建议和真实 MP4 导出。当前为 **2026-11-07 最终交付版**。应用核心固定于 `fce60bf`，整合兼容性修复并完成本机复验。
 
+## 公网完整Demo
+
+**[打开可直接使用的网页版](https://con-chip-variable-sleeping.trycloudflare.com)**：支持视频上传、真实字幕/建议模型、直接录音、人声分离及MP4导出，无需SSH转发。已部署为常驻服务并完成公网端到端验收；[部署详情](deliverables/deployment/README.md)。当前是临时HTTPS域名，隧道重建时会变更；固定域名可另行绑定。
+
 ## 最终交付入口
 
 [最终材料与下载](deliverables/final_submission/README.md)：五页产品说明PDF/DOCX、AI使用记录、171.56秒实际操作视频、八图流程和完整ZIP。评审可直接下载附件或离线阅读，无需访问localhost或安装模型。技术验收见[FINAL_VALIDATION](deliverables/final_submission/FINAL_VALIDATION.md)。

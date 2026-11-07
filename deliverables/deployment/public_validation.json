@@ -1,0 +1,18 @@
+{
+  "url": "https://con-chip-variable-sleeping.trycloudflare.com",
+  "checks": [
+    "public HTTPS, secure context/cookie, all four runtime checks ready",
+    "public video upload without SRT and actual server ASR",
+    "public sentence notes and measured word cut/restore",
+    "HTTPS microphone capture, WAV upload, ASR and explicit replacement",
+    "actual server Demucs separation with both audition tracks",
+    "recorded/uploaded project renders and downloads through HTTPS",
+    "actual hosted Qwen inference and explicit proposal acceptance",
+    "public result playback, Range206, download and cross-session isolation"
+  ],
+  "modelElapsedSeconds": 187.5,
+  "pageErrors": [],
+  "microphone": "Actual browser MediaRecorder with an authorized fixture device, not a physical-microphone quality claim",
+  "mode": "hosted",
+  "privateLocalWorkspaceUnchanged": true
+}

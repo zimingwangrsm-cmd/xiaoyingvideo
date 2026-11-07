@@ -1,5 +1,12 @@
 # 口播精简实施进度
 
+## 当前：公网完整Demo部署（2026-11-07）
+- 公网入口：https://con-chip-variable-sleeping.trycloudflare.com，完整上传、识别、建议、录音、分离、导出已通过外网浏览器实际验收。
+- 独立快照与公网数据目录，模型8783/web8768/HTTPS隧道由systemd用户服务管理，开机启用，原8767保留。
+- 72项后端、16项前端检查通过；web被终止后6.24秒自动恢复，项目与下载保留、公网地址不变。
+- 部署包留在data/deploy/koubo-web-runtime.tar.gz，不设公开源码包下载入口；临时域名在隧道重建后可能变化。
+- 详情见deliverables/deployment/README.md、deploy/README.md。
+
 ## 最终交付（2026-11-07）
 - 应用核心fce60bf整合538fa8e兼容性修复并适配交付机FFmpeg4.2；干净依赖环境67项后端、16项前端、构建与compileall通过。
 - 同版本真实Qwen148.2秒/32项候选；连续录屏171.56秒/4289帧/实际声音；本轮导出27.588秒/827帧/6段，区别于历史AI全接受25.188秒。

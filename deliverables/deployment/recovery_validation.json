@@ -1,0 +1,12 @@
+{
+  "checkedAt": "2026-11-07T09:41:33.267142+00:00",
+  "webMainPidChanged": true,
+  "systemdRestarts": 1,
+  "readyAfterSeconds": 6.24,
+  "publicUrlUnchanged": true,
+  "url": "https://con-chip-variable-sleeping.trycloudflare.com",
+  "method": "Killed only the named idle demo web main process; systemd Restart=always restored it, model/tunnel remained running.",
+  "browserRestoredProject": true,
+  "editAndRevisionPreserved": true,
+  "currentDownloadAvailable": true
+}

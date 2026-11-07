@@ -9,7 +9,8 @@ def _dotenv():
     path = ROOT / '.env'
     allowed = {'APP_MODE', 'ALLOW_UPLOADS', 'DATA_DIR', 'MAX_UPLOAD_MB', 'MAX_SOURCE_SECONDS',
                'MODEL_MODE', 'MODEL_BASE_URL', 'MODEL_NAME', 'MODEL_API_KEY', 'DEMO_TEST_FAILURES',
-               'SPEECH_PYTHON', 'ASR_MODEL', 'LOCAL_LLM_URL', 'FRONTEND_DIST'}
+               'SPEECH_PYTHON', 'ASR_MODEL', 'LOCAL_LLM_URL', 'FRONTEND_DIST',
+               'HOSTED_MAX_PROJECTS','HOSTED_PROJECTS_PER_SESSION','HOSTED_MAX_JOBS','HOSTED_STORAGE_MB'}
     if path.is_file():
         for line in path.read_text(encoding='utf-8').splitlines():
             line = line.strip()
@@ -37,6 +38,11 @@ class Settings:
     local_llm_url: str = ''
     frontend_dist: str = str(ROOT / 'frontend' / 'dist')
 
+    hosted_max_projects: int = 50
+    hosted_projects_per_session: int = 10
+    hosted_max_jobs: int = 3
+    hosted_storage_mb: int = 10240
+
     @property
     def model_available(self):
         return self.model_mode != 'rules' and all([self.model_base_url, self.model_name, self.model_api_key])
@@ -49,7 +55,7 @@ def settings_from_env():
     data_dir = (ROOT / raw_dir).resolve() if not raw_dir.is_absolute() else raw_dir.resolve()
     return Settings(
         data_dir=data_dir, mode=mode,
-        allow_uploads=mode == 'local' and os.getenv('ALLOW_UPLOADS', 'true').lower() == 'true',
+        allow_uploads=mode in ['local','hosted'] and os.getenv('ALLOW_UPLOADS', 'true').lower() == 'true',
         max_upload_mb=min(100, int(os.getenv('MAX_UPLOAD_MB', '100'))),
         max_source_seconds=min(180, int(os.getenv('MAX_SOURCE_SECONDS', '180'))),
         model_mode=os.getenv('MODEL_MODE', 'auto'), model_base_url=os.getenv('MODEL_BASE_URL', ''),
@@ -58,5 +64,9 @@ def settings_from_env():
         speech_python=os.getenv('SPEECH_PYTHON') or str(ROOT/'.venv-v2/bin/python'),
         asr_model=os.getenv('ASR_MODEL') or str(ROOT/'models/faster-whisper-medium'),
         local_llm_url=os.getenv('LOCAL_LLM_URL', ''),
+        hosted_max_projects=max(1,int(os.getenv('HOSTED_MAX_PROJECTS','50'))),
+        hosted_projects_per_session=max(1,int(os.getenv('HOSTED_PROJECTS_PER_SESSION','10'))),
+        hosted_max_jobs=max(1,int(os.getenv('HOSTED_MAX_JOBS','3'))),
+        hosted_storage_mb=max(1,int(os.getenv('HOSTED_STORAGE_MB','10240'))),
         frontend_dist=os.getenv('FRONTEND_DIST', str(ROOT/'frontend/dist')),
     )

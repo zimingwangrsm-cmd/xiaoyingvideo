@@ -1,0 +1,47 @@
+{
+  "deployedAt": "2026-11-07T09:51:09.775285+00:00",
+  "url": "https://con-chip-variable-sleeping.trycloudflare.com",
+  "mode": "hosted",
+  "sourceSha256": "a00180754f229db1acd9dde7bbefece98179a5e29cbf4defea25051956d2436f",
+  "temporaryHostname": true,
+  "services": {
+    "koubo-demo-model.service": {
+      "active": true,
+      "enabled": true
+    },
+    "koubo-demo-web.service": {
+      "active": true,
+      "enabled": true
+    },
+    "koubo-demo-tunnel.service": {
+      "active": true,
+      "enabled": true
+    }
+  },
+  "userLingerEnabled": true,
+  "webPort": 8768,
+  "modelPort": 8783,
+  "backendTests": 72,
+  "frontendTests": 16,
+  "package": {
+    "localPath": "data/deploy/koubo-web-runtime.tar.gz",
+    "bytes": 35085839,
+    "sha256": "5b0ca5a314013bc6e389deeff38d7f48c4ae1e325fd31ffd8dd6b1225dadfc5d",
+    "publicDownload": false,
+    "modelsIncluded": false
+  },
+  "limits": {
+    "videoMb": 90,
+    "sourceSeconds": 180,
+    "recordingSeconds": 60,
+    "projectsPerSession": 10,
+    "projectsTotal": 50,
+    "activeProcessingJobs": 3,
+    "storageMb": 10240
+  },
+  "validation": [
+    "public_validation.json",
+    "recovery_validation.json"
+  ],
+  "hostnameNote": "Quick Tunnel is for demos; hostname changes if tunnel process is recreated. Web/model recovery does not recreate the tunnel."
+}

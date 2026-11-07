@@ -15,6 +15,8 @@ from .schemas import (ActionRequest, ProposalRequest, RenderRequest, SampleReque
                       ProcessingRequest, ConfirmProcessingRequest, ProposalDecisionRequest, RestoreTranscriptRequest)
 from .service import AppError, Service
 from . import delivery
+from .hosting import HostedGuard, readiness
+from starlette.exceptions import HTTPException
 
 COOKIE = 'koubo_session'
 
@@ -66,6 +68,7 @@ def create_app(settings: Optional[Settings] = None):
     service = Service(settings)
     app = FastAPI(title='口播精简 Demo', docs_url=None, redoc_url=None, openapi_url=None)
     app.state.service = service
+    app.add_middleware(HostedGuard,service=service)
 
     @app.middleware('http')
     async def session_and_errors(request: Request, call_next):
@@ -92,6 +95,10 @@ def create_app(settings: Optional[Settings] = None):
     async def validation_error(request, exc):
         return JSONResponse({'error': {'code': 'invalid_request', 'message': '请求信息不完整或格式不正确，请检查输入后重试。'}}, status_code=422)
 
+    @app.exception_handler(HTTPException)
+    def http_error(request, exc):
+        return JSONResponse({'error':{'code':'request_too_large' if exc.status_code==413 else 'http_error','message':str(exc.detail)}},status_code=exc.status_code)
+
     @app.exception_handler(ValueError)
     async def value_error(request, exc):
         return JSONResponse({'error': {'code': 'invalid_input', 'message': str(exc)}}, status_code=422)
@@ -107,6 +114,11 @@ def create_app(settings: Optional[Settings] = None):
                 'suggestionMode': 'local_llm' if settings.local_llm_url else 'llm' if settings.model_available else 'rules',
                 'capabilities': service.capabilities(), 'version': 2,
                 'limits': {'maxUploadMb':settings.max_upload_mb,'maxSourceSeconds':settings.max_source_seconds}}
+
+    @app.get('/api/ready')
+    def ready():
+        result=readiness(settings)
+        return JSONResponse(result,status_code=200 if result['status']=='ready' else 503)
 
     @app.get('/api/samples')
     def samples():

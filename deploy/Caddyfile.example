@@ -1,0 +1,7 @@
+# For a fixed domain already pointing at this server. Replaces the Quick Tunnel.
+{$KOUBO_DOMAIN} {
+    request_body {
+        max_size 96MB
+    }
+    reverse_proxy 127.0.0.1:8768
+}

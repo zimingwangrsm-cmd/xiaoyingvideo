@@ -268,7 +268,7 @@ async function importFiles() {
   if (!video) { showNotice('请选择 MP4 视频。可以不提供字幕，由本机自动识别。'); draw(); return; }
   if (!/\.mp4$/i.test(video.name)) { showNotice('当前支持 MP4 视频，请换一个文件。'); draw(); return; }
   if (subtitles && !/\.srt$/i.test(subtitles.name)) { showNotice('请提供一份与原片对应的 SRT 字幕。'); draw(); return; }
-  if (video.size > 100 * 1024 * 1024) { showNotice('视频超过 100 MB，请选择更小的 MP4 文件。'); draw(); return; }
+  if (video.size > (state.health?.limits?.maxUploadMb||100) * 1024 * 1024) { showNotice(`视频超过 ${state.health?.limits?.maxUploadMb||100} MB，请选择更小的 MP4 文件。`); draw(); return; }
   const form = new FormData(); form.append('video', video); if (subtitles) form.append('subtitles', subtitles); form.append('separateVoice', String(state.separateVoice));
   state.busy = 'import'; state.notice = null; draw();
   try {

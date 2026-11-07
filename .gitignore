@@ -39,3 +39,5 @@ deliverables/**/*.html
 fixtures/**/*.log
 
 frontend/dist-opt/
+
+frontend/dist-hosted/

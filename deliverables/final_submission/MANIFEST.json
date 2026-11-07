@@ -5,8 +5,8 @@
   "files": [
     {
       "path": "AI_USAGE.md",
-      "bytes": 4188,
-      "sha256": "5a10a3ed78447649ee1d71f91b9d25cca7d39117cafa010025035ccb4d7d9fc0"
+      "bytes": 3730,
+      "sha256": "65b973984d6f12483d0f487c76291fe3352d81fe623424c927e00341ac0beaf1"
     },
     {
       "path": "ATTRIBUTION.md",
@@ -30,13 +30,13 @@
     },
     {
       "path": "PRODUCT_BRIEF.md",
-      "bytes": 9257,
-      "sha256": "f9406dcfe80694278f8257a18975c64c1ff499cf438630d56506d0f7cb137fce"
+      "bytes": 8876,
+      "sha256": "b0ce8549a88ad1e2bde947a975e42bff23d962d147e186f6ab2c4fc061f3d2b7"
     },
     {
       "path": "README.md",
-      "bytes": 2964,
-      "sha256": "7158189fc2eba3cde573a8459ad752c68fbab66185803d3d93e5cd37d07094b6"
+      "bytes": 2996,
+      "sha256": "21beca3874971617e9e2146b2fa5c1293f012f5599f7919f6439f700c6fe795a"
     },
     {
       "path": "START_HERE.html",
@@ -45,18 +45,18 @@
     },
     {
       "path": "WORDING_REVIEW.md",
-      "bytes": 444,
-      "sha256": "b332f0560605c7509eea8a5aa84b62e13a28a53c8784c0b3335c71e553b1e2f0"
+      "bytes": 3816,
+      "sha256": "8a9436abb2ad562aee68fd61ee56850da739d5664e7b3a182d11f4ee10b440c5"
     },
     {
       "path": "ai_usage_record.docx",
-      "bytes": 39929,
-      "sha256": "029fb881bed486be85c1e74e75dbd66e8f5c357772c1cae06d15d76f40de50e3"
+      "bytes": 39643,
+      "sha256": "ff118130a0d85f78dedadfdaa57b0e665cabf4e8e14716caa0ccbdd64eecf4cd"
     },
     {
       "path": "ai_usage_record.pdf",
-      "bytes": 148492,
-      "sha256": "1fcf7abe96b0f0b73bd62081ed2cd8c6b8b31c6e3f3e6330ba90c816549c9ea1"
+      "bytes": 176994,
+      "sha256": "7d2cfefbc8ffaaa65e795b9a03b43bc15af934199ba00f46360e5b2723731304"
     },
     {
       "path": "browser_regression.json",
@@ -120,13 +120,13 @@
     },
     {
       "path": "product_brief_5pages.docx",
-      "bytes": 42476,
-      "sha256": "97d11f3c88b096ff1e44463b7418624f0db8252700b74f29ca660f984cc7d5d6"
+      "bytes": 42255,
+      "sha256": "b0750eb433258435d32c04963dffaf41f710382c64bd996a68667784826980d1"
     },
     {
       "path": "product_brief_5pages.pdf",
-      "bytes": 221428,
-      "sha256": "13c3f27cbad4288c40cc7d5e6198c23cf15b1836bc62f70c05d74f69b558e08f"
+      "bytes": 293090,
+      "sha256": "d4c776d69e578c226dcac2443414a244a9de2ebca952a7f4ec57fb70e0088440"
     },
     {
       "path": "real_inference.json",
@@ -183,5 +183,7 @@
       "bytes": 397718,
       "sha256": "edaad4bb60611efd97c69ca7ef84e68ab82107a7196b06e5f41ff9ba908bad4f"
     }
-  ]
+  ],
+  "documentsReviewBaseCommit": "cfe5c08b26157104104a6f64ea5a0e07fb039665",
+  "documentsRevision": "2026-11-07 final-package editorial review; see WORDING_REVIEW.md"
 }

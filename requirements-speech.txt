@@ -1,5 +1,0 @@
-# Install in .venv-v2, separate from the web service. CPU PyTorch wheels installed first.
-numpy==1.26.4
-faster-whisper==1.2.1
-demucs==4.0.1
-opencc-python-reimplemented==0.1.7

@@ -13,7 +13,7 @@ export function processingCard(state) {
     const transcript=job.result.transcript;
     result=`<p>识别到 ${transcript.cues.length} 句、${transcript.words.length} 个时间单元。确认后建立新的编辑时间轴；这会重置当前的字幕修改、剪词、必留、排序、备注和补录；可以通过高级工具恢复识别前版本。</p><p class="inline-note warning">将重置：${state.project.edit.lockedBlockIds.length}个必留、${state.project.edit.deletedWordIds?.length||0}个删词、${Object.keys(state.project.edit.captionEdits||{}).length+Object.keys(state.project.edit.wordEdits||{}).length}处字幕校对、${Object.keys(state.project.edit.notes||{}).length}条备注、${Object.keys(state.project.edit.recordings||{}).length}段补录。</p><div class="transcription-review">${transcript.cues.map(c=>`<p><small>${seconds(c.startMs)}–${seconds(c.endMs)}秒</small> ${e(c.text)}</p>`).join('')}</div>${button('确认使用识别稿','confirm-transcript','',stale || Boolean(state.busy))}`;
   } else if(job.status==='succeeded' && job.kind==='recording') {
-    result=`<p>补录 ${seconds(job.result.sourceDurationMs)} 秒，保持原段 ${seconds(job.result.durationMs)} 秒画面。试听后确认替换；不会自动匹配口型。</p><audio controls src="${e(job.result.audioUrl)}"></audio><p>${e(job.result.text)}</p>${button('确认替换这一段声音','confirm-recording','',stale || Boolean(state.busy))}`;
+    result=`<p>补录 ${seconds(job.result.sourceDurationMs)} 秒，替换后本段 ${seconds(job.result.durationMs)} 秒${job.result.extendedVideo?'，超出原句的部分停留在末帧':'，保持原段画面时长'}。试听后确认替换；不会自动匹配口型。</p><audio controls src="${e(job.result.audioUrl)}"></audio><p>${e(job.result.text)}</p>${button('确认替换这一段声音','confirm-recording','',stale || Boolean(state.busy))}`;
   } else if(job.status==='succeeded' && job.kind==='separate') {
     result='<p>人声与背景音已准备好，可在“音频处理”中分别试听。</p>';
   }
@@ -73,14 +73,14 @@ function recordingControls(state, block, applied) {
   const active=['requesting','recording','encoding'].includes(phase), locked=p.edit.lockedBlockIds.includes(bid);
   const forbidden=state.health?.allowUploads===false, unavailable=!p.capabilities?.automaticCaptions;
   const disabled=Boolean(state.busy)||locked||forbidden||unavailable;
-  const duration=(block.clipEndFrame-block.clipStartFrame)/30;
+  const duration=60;
   return `<form id="recording-form"><h3>补录这一句 <small>${e(bid)} · 最长 ${duration.toFixed(1)}秒</small></h3>
-    <p class="caption">录下准备替换的这句话，或上传已有录音。试听后提交识别，再确认替换。短音频补静音，保留原画面时长；人物口型不会同步变化。</p>
+    <p class="caption">录下准备替换的这句话，或上传已有录音。试听后提交识别，再确认替换。每句最多60秒。短于原句补静音；长于原句延长末帧，完整保留声音。人物口型不会同步变化。</p>
     ${locked?`<p class="inline-note warning">本句已设为必留，取消后才能替换声音。${button('取消本句必留','unlock',`data-id="${e(bid)}"`,Boolean(state.busy)||active)}</p>`:''}
     ${forbidden?'<p class="inline-note warning">公开样例模式不可上传补录，也不可直接录音。</p>':''}
     <div class="recording-modes" aria-label="补录方式">${button('直接录音','recording-mode','data-mode="microphone" aria-pressed="'+mic+'"',active)}${button('上传音频','recording-mode','data-mode="upload" aria-pressed="'+!mic+'"',active)}</div>
     <div ${mic?'':'hidden'} class="microphone-controls">
-      <p class="recording-status" role="status">${phase==='requesting'?'请在浏览器中允许麦克风':phase==='encoding'?'正在准备试听音频…':phase==='recording'?'<span class="recording-dot"></span>正在录音 · <span id="recording-timer">'+(state.capture.seconds||0).toFixed(1)+'</span> / '+duration.toFixed(1)+' 秒':'点击开始录音；达到本句时长会自动结束。'}</p>
+      <p class="recording-status" role="status">${phase==='requesting'?'请在浏览器中允许麦克风':phase==='encoding'?'正在准备试听音频…':phase==='recording'?'<span class="recording-dot"></span>正在录音 · <span id="recording-timer">'+(state.capture.seconds||0).toFixed(1)+'</span> / '+duration.toFixed(1)+' 秒':'点击开始录音；达到60秒会自动结束。'}</p>
       <div class="tool-row">${active?`${button('结束录音','stop-recording','',phase!=='recording')}${button('取消录音','cancel-recording')}`:button(take?'重新录制':'开始录音','start-recording','',disabled)}</div>
       <p class="caption">请对着麦克风读出上方句子或“准备重新说的内容”。录音保留在本页，提交前不会上传。</p>
     </div>

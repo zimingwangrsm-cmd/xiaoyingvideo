@@ -377,7 +377,7 @@ app.addEventListener('click', async event => {
       if(!block||state.busy||state.health?.allowUploads===false||state.project.edit.lockedBlockIds.includes(block.id))break;
       app.querySelectorAll('audio,video').forEach(m=>m.pause());
       state.capture={phase:'idle',seconds:0};
-      await capture.start({projectId:state.project.id,blockId:block.id},(block.clipEndFrame-block.clipStartFrame)/30);break;
+      await capture.start({projectId:state.project.id,blockId:block.id},60);break;
     }
     case 'stop-recording': capture.stop();break;
     case 'cancel-recording': capture.cancel();break;
@@ -393,6 +393,12 @@ app.addEventListener('click', async event => {
       await mutate({type:action==='delete-selected-words'?'delete_words':'restore_words',wordIds:state.selectedWordIds});break;
     case 'seek-selected-word': {
       const word=state.project.words.find(w=>w.id===state.selectedWordIds[0]);
+      const recording=word&&state.project.edit.recordings?.[word.blockId];
+      if(recording){
+        const block=state.project.blocks.find(b=>b.id===word.blockId);state.refineTab='audio';draw();
+        const audio=[...app.querySelectorAll('audio')].find(a=>a.getAttribute('src')===recording.audioUrl);
+        if(audio){audio.currentTime=Math.max(0,word.startMs/1000-block.clipStartFrame/30);audio.play().catch(()=>{});audio.scrollIntoView({block:'nearest'});}break;
+      }
       state.refineBlock=null;draw();const v=document.getElementById('source-video');
       if(word&&v){v.currentTime=word.startMs/1000;v.play().catch(()=>{});}break;
     }

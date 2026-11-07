@@ -125,7 +125,7 @@ def test_transcription_confirmation_wont_overwrite_concurrent_edit(app,monkeypat
 
 def test_recording_too_long_is_rejected_before_transcription(app,tmp_path,monkeypatch):
     p=seeded(app);file=tmp_path/'long.wav'
-    subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','sine=frequency=500:duration=3','-y',str(file)],check=True)
+    subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','sine=frequency=500:duration=60.1','-y',str(file)],check=True)
     def forbidden(*a,**k):raise AssertionError('Should not transcribe oversized recording')
     monkeypatch.setattr(speech,'run_worker',forbidden)
     audio=UploadFile(filename='long.wav',file=BytesIO(file.read_bytes()))
@@ -263,3 +263,34 @@ def test_processing_parameters_are_part_of_active_request_identity(app,monkeypat
     first=app[0].start_processing(app[1],p['id'],request,'transcribe')
     assert app[0].start_processing(app[1],p['id'],request,'transcribe')['id']==first['id']
     expect_error('processing_busy',lambda:app[0].start_processing(app[1],p['id'],request,'suggestions'),409)
+
+
+@pytest.mark.parametrize('length', [3, 60])
+def test_long_recording_preserves_voice_extends_last_frame_and_restores(app,tmp_path,monkeypatch,length):
+    from backend.app.schemas import ConfirmProcessingRequest
+    p=seeded(app);file=tmp_path/'minute.wav'
+    subprocess.run(['ffmpeg','-v','error','-f','lavfi','-i','sine=frequency=1100:duration='+str(length),'-y',str(file)],check=True)
+    monkeypatch.setattr(speech,'run_worker',lambda *a,**k:{'cues':[{'text':'完整补录。'}],
+        'words':[{'text':'开头','startMs':100,'endMs':800},{'text':'结尾','startMs':(length-1)*1000,'endMs':length*1000-100}]})
+    if length==3:
+        subprocess.run(['ffmpeg','-v','error','-i',str(app[0].store.project_dir(p['id'])/'source.mp4'),'-vn','-y',str(app[0].store.project_dir(p['id'])/'separated_background.wav')],check=True)
+    job=wait_processing(app,app[0].upload_recording(app[1],p['id'],p['revision'],'s01',UploadFile(filename='minute.wav',file=BytesIO(file.read_bytes())),length==3))
+    assert job['status']=='succeeded' and job['result']['durationFrames']==length*30
+    p=app[0].confirm_recording(app[1],p['id'],ConfirmProcessingRequest(expectedRevision=p['revision'],jobId=job['id']))
+    assert p['metrics']['plannedDurationMs']==(length+4)*1000
+    locked=action(app,p,'lock',blockIds=['s01']);assert locked['metrics']['lockedDurationMs']==length*1000
+    p=action(app,locked,'unlock',blockIds=['s01'])
+    out=completed(app,render(app,p));assert out['status']=='succeeded'
+    video=app[0].artifact_path(app[1],out['artifactId'],'video')
+    assert all_frame_colors(video)==[0]*(length*30)+[1]*60+[2]*60
+    assert abs(frequency_at(video,length-.5)-1100)<5
+    record=json.loads(app[0].artifact_path(app[1],out['artifactId'],'record').read_text())
+    assert record['captions'][0]['endMs']>(length-1)*1000
+    assert record['captions'][1]['startMs']>=length*1000
+    first=next(w for w in p['words'] if w['blockId']=='s01')
+    p=refine(app,p,'delete_words',wordIds=[first['id']])
+    tail=completed(app,render(app,p));assert tail['status']=='succeeded',tail
+    tail_video=app[0].artifact_path(app[1],tail['artifactId'],'video')
+    tail_frames=round(p['metrics']['plannedDurationMs']*.03)-120
+    assert all_frame_colors(tail_video)==[0]*tail_frames+[1]*60+[2]*60
+    p=refine(app,p,'restore_audio',blockId='s01');assert p['metrics']['plannedDurationMs']==6000

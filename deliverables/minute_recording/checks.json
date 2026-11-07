@@ -1,0 +1,8 @@
+{
+  "backendTests": 65,
+  "backendSeconds": 47.83,
+  "frontendTests": 16,
+  "longAudioRegression": "3s and 60s replacing 2s; actual frames, tail audio, shifted captions, word cuts, locks and restore; 60.1s rejected",
+  "preservedProductionProjects": 21,
+  "webUrl": "http://127.0.0.1:8767"
+}

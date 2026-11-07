@@ -70,3 +70,7 @@
 ## 2026-11-07 前端录音补充
 
 直接录音由用户点击后调用getUserMedia/MediaRecorder；本地转换为16位单声道WAV，沿用现有recordings上传/确认API，无新增服务端路由。录音及上传文件的本页试听草稿按projectId/blockId隔离，明确提交后才发给服务器。关闭重开同一句保留草稿；停止/取消释放流，取消后迟到的授权流立即关闭。WAV输出不超过所选句子帧时长；后端仍独立验证实际文件时长。
+
+## 60秒补录更新
+
+每句直接录音与上传上限60秒；不再以原句长度限制上传。recording结果增加durationFrames、originalDurationMs、extendedVideo，durationMs为max(原句帧数,ceil(录音秒数×30))/30。录音长于原句时输出重复原句末帧，音频完整保留，后续字幕与音视频一起顺延；背景音只保留原句范围，延长部分补静音。recording span新增recordingVideoStartFrame/recordingVideoEndFrame界定原画面，不将录音延长坐标误当作下一句素材。旧补录无durationFrames时保持原行为。

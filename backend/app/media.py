@@ -240,12 +240,22 @@ def render_edit(source_path, spans, recordings, output_path, progress_callback=N
         graph, labels, frames=[],[],0
         for i,span in enumerate(spans):
             a,b,o=(span[k] for k in ['sourceStartFrame','sourceEndFrame','outputStartFrame'])
-            if any(type(v) is not int for v in [a,b,o]) or not 0<=a<b<=source['totalFrames'] or o!=frames:
-                raise ValueError('剪辑区间或输出时间轴无效。')
             rid=span.get('recordingId');audio_index=indexes[rid] if rid else 0
+            if any(type(v) is not int for v in [a,b,o]) or not 0<=a<b or o!=frames:
+                raise ValueError('剪辑区间或输出时间轴无效。')
             aa=span.get('audioStartFrame',a) if rid else a
             if type(aa) is not int or aa<0:raise ValueError('补录时间轴无效。')
-            graph.append('[0:v:0]trim=start_frame=%d:end_frame=%d,setpts=PTS-STARTPTS[v%d]'%(a,b,i))
+            if rid and 'recordingVideoEndFrame' in span:
+                va,vb=span['recordingVideoStartFrame'],span['recordingVideoEndFrame']
+                if any(type(v) is not int for v in [va,vb]) or not 0<=va<vb<=source['totalFrames']:
+                    raise ValueError('补录画面区间无效。')
+                # Keep the original sentence picture; extend its last frame, never borrow the next sentence.
+                start=min(va+aa,vb-1);end=min(vb,start+b-a)
+                pad=max(0,b-a-(end-start))
+                graph.append('[0:v:0]trim=start_frame=%d:end_frame=%d,setpts=PTS-STARTPTS,tpad=stop_mode=clone:stop=%d,trim=end_frame=%d,setpts=N/(30*TB)[v%d]'%(start,end,pad,b-a,i))
+            else:
+                if b>source['totalFrames']:raise ValueError('剪辑画面区间无效。')
+                graph.append('[0:v:0]trim=start_frame=%d:end_frame=%d,setpts=PTS-STARTPTS[v%d]'%(a,b,i))
             graph.append('[%d:a:0]aresample=48000,atrim=start_sample=%d:end_sample=%d,asetpts=PTS-STARTPTS[a%d]'%
                          (audio_index,aa*1600,(aa+b-a)*1600,i))
             labels.append('[v%d][a%d]'%(i,i));frames+=b-a

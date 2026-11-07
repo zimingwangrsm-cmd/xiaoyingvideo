@@ -1,6 +1,7 @@
 """Revisioned V2 editing and recoverable asynchronous local model jobs."""
 import copy
 import hashlib
+import math
 import json
 import shutil
 import time
@@ -383,13 +384,15 @@ class V2ServiceMixin:
         folder=self.store.project_dir(project['id'])/'recordings'/rid
         raw=json.loads(_run(['ffprobe','-v','error','-show_format','-show_streams','-of','json',str(folder/'upload.audio')],30))
         if not any(s.get('codec_type')=='audio' for s in raw['streams']):raise ValueError('补录文件没有可用声音。')
-        seconds=float(raw['format']['duration']);allowed=(block['clipEndFrame']-block['clipStartFrame'])/30
-        if seconds<=0 or seconds>allowed+.01:raise ValueError('补录长%.2f秒，原段只有%.2f秒；请缩短或重新补录。'%(seconds,allowed))
+        seconds=float(raw['format']['duration'])
+        if not math.isfinite(seconds) or seconds<=0 or seconds>60.001:raise ValueError('每句补录最多60秒，请缩短或重新补录。')
+        original_frames=block['clipEndFrame']-block['clipStartFrame']
+        frames=max(original_frames,math.ceil(seconds*30-1e-6));allowed=frames/30
         voice=folder/'voice.wav'
         _run(['ffmpeg','-v','error','-nostdin','-y','-i',str(folder/'upload.audio'),'-vn','-ac','2','-ar','48000',
               '-af','aresample=48000:async=1:first_pts=0,apad','-t',str(allowed),str(voice)],90)
         phase('transcribing_recording');result=speech.run_worker(self.settings,'transcribe',voice,work/'transcript.json')
-        fake=copy.deepcopy(project);fake['blocks']=[dict(block,clipStartFrame=0,clipEndFrame=block['clipEndFrame']-block['clipStartFrame'])]
+        fake=copy.deepcopy(project);fake['blocks']=[dict(block,clipStartFrame=0,clipEndFrame=frames)]
         words=editing.attach_words(fake,result['words'])
         for w in words:
             w['id']=rid+'_'+w['id'];w['clipStartFrame']+=block['clipStartFrame'];w['clipEndFrame']+=block['clipStartFrame']
@@ -399,12 +402,12 @@ class V2ServiceMixin:
             background=self.store.project_dir(project['id'])/'separated_background.wav'
             if not background.is_file():raise ValueError('保留背景音乐前，请先完成人声分离；也可选择整段替换声音。')
             start=block['clipStartFrame']/30
-            graph='[0:a]atrim=start=%.9f:end=%.9f,asetpts=PTS-STARTPTS,aresample=48000[bg];[bg][1:a]amix=inputs=2:duration=shortest,volume=2,alimiter=limit=0.95:attack=1:release=50[out]'%(start,start+allowed)
+            graph='[0:a]atrim=start=%.9f:end=%.9f,asetpts=PTS-STARTPTS,aresample=48000,apad,atrim=duration=%.9f[bg];[bg][1:a]amix=inputs=2:duration=shortest,volume=2,alimiter=limit=0.95:attack=1:release=50[out]'%(start,block['clipEndFrame']/30,allowed)
             _run(['ffmpeg','-v','error','-nostdin','-y','-i',str(background),'-i',str(voice),'-filter_complex',graph,'-map','[out]','-ar','48000',str(mixed)],90)
         else:shutil.copyfile(voice,mixed)
         return {'id':rid,'blockId':bid,'words':words,'text':''.join(c['text'] for c in result['cues']),
                 'fileName':options['fileName'],'blockText':block['text'],'uploadSha256':options['uploadSha256'],
-                'sourceDurationMs':seconds*1000,'durationMs':allowed*1000,'keepBackground':options.get('keepBackground',False),
+                'sourceDurationMs':seconds*1000,'durationMs':allowed*1000,'durationFrames':frames,'originalDurationMs':original_frames/.03,'extendedVideo':frames>original_frames,'keepBackground':options.get('keepBackground',False),
                 'sha256':sha256_file(mixed),'audioUrl':'/api/projects/%s/recordings/%s/audio'%(project['id'],rid)}
 
     def confirm_recording(self,owner,pid,request):

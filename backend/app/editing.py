@@ -59,6 +59,11 @@ def join_words(words, edits):
     return result
 
 
+def block_frames(project, block):
+    recording=project['edit'].get('recordings',{}).get(block['id'],{})
+    return max(block['clipEndFrame']-block['clipStartFrame'],recording.get('durationFrames',0))
+
+
 def timeline(project):
     if project.get('schemaVersion', 1) < 2:
         spans = build_spans(project['blocks'], project['edit']['keptBlockIds']) if project['edit']['keptBlockIds'] else []
@@ -85,12 +90,13 @@ def timeline(project):
                 else:
                     groups.append({'start': word['clipStartFrame'], 'end': word['clipEndFrame'], 'words': [word]})
         else:
-            groups = [{'start': block['clipStartFrame'], 'end': block['clipEndFrame'], 'words': []}]
+            groups = [{'start': block['clipStartFrame'], 'end': block['clipStartFrame']+block_frames(project,block), 'words': []}]
         for group in groups:
             a, b = group['start'], group['end']
             span = {'sourceStartFrame': a, 'sourceEndFrame': b, 'outputStartFrame': output, 'blockIds': [bid]}
             if recording:
-                span.update(recordingId=recording['id'], audioStartFrame=a-block['clipStartFrame'])
+                span.update(recordingId=recording['id'], audioStartFrame=a-block['clipStartFrame'],
+                            recordingVideoStartFrame=block['clipStartFrame'],recordingVideoEndFrame=block['clipEndFrame'])
             spans.append(span)
             if group['words']:
                 text = join_words(group['words'], edit['wordEdits'])

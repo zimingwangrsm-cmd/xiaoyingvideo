@@ -246,7 +246,7 @@ class Service(V2ServiceMixin):
         edit, blocks = project['edit'], project['blocks']
         spans, _ = self._edit_timeline(project)
         planned = duration_ms(spans)
-        locked_ms = sum(b['clipEndFrame'] - b['clipStartFrame'] for b in blocks if b['id'] in edit['lockedBlockIds']) * 1000 / 30
+        locked_ms = sum(editing.block_frames(project,b) for b in blocks if b['id'] in edit['lockedBlockIds']) * 1000 / 30
         shortest = min(b['clipEndFrame'] - b['clipStartFrame'] for b in blocks) * 1000 / 30
         words = editing.all_words(project)
         if words:

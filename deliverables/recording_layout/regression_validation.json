@@ -1,0 +1,34 @@
+{
+  "testedAt": "2026-11-07T03:16:53.095Z",
+  "checks": [
+    {
+      "name": "saving caption preserves unsaved note",
+      "kind": "real HTTP/browser"
+    },
+    {
+      "name": "failed request preserves all field input",
+      "kind": "injected network failure; real DOM"
+    },
+    {
+      "name": "late successful response preserves subsequent typing",
+      "kind": "delayed real HTTP response"
+    },
+    {
+      "name": "Escape closes drawer and restores trigger focus",
+      "kind": "real HTTP/browser"
+    },
+    {
+      "name": "cross-project draft isolation, return navigation and focus trap",
+      "kind": "real HTTP/browser"
+    },
+    {
+      "name": "accept one, reject another, and accept remaining multiple items",
+      "kind": "deterministic proposal fixture + real decision HTTP"
+    },
+    {
+      "name": "mobile correction, word cut/restore, recording, audio persistence, real render, cut-loop and download",
+      "kind": "real Chromium mobile emulation with virtual audio clock; keyboard space simulated by viewport resize, not physical-device or human-listening proof"
+    }
+  ],
+  "pageErrors": []
+}

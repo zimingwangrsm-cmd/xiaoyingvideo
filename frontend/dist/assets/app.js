@@ -1,3 +1,4 @@
+import { SentenceRecorder } from './recorder.js';
 import { renderInto } from './dom.js';
 import { cutPoints } from './v2views.js';
 import { draftFor, setDraft, clearSavedDraft, projectHasDrafts } from './drafts.js';
@@ -9,7 +10,7 @@ const state = {
   loading: true, health: null, samples: [], project: null, recentProjects: [], previousProject: null, view: 'start',
   files: { video: null, subtitles: null }, busy: '', proposalPending: false,
   proposal: null, job: null, notice: null, retry: null,
-  selectedSampleId: '', separateVoice: false, processingJob: null, proposalV2: null,
+  workspaceTab:'transcript', proposalFilter:'pending', recordingMode:'upload', audioTakes:{}, capture:{phase:'idle'}, selectedSampleId: '', separateVoice: false, processingJob: null, proposalV2: null,
   refineBlock: null, refineTab: 'text', selectedWordIds: [], refineDrafts: {}, recordingFile: null, keepBackground: false, editorStage: 'edit',
   cutLoop: null, cutIndex: 0, onlyDeleted: false, allowOver: false, activeBlock: null, playheadMs: 0, targetDraft: '',
 };
@@ -17,6 +18,31 @@ let projectTimer, jobTimer, processingTimer, projectEpoch = 0, jobEpoch = 0;
 let autoShowJob = null;
 const wiredVideos = new WeakSet();
 let lastDialogKey = null, returnFocusBlock = null;
+const takeKey = (pid = state.project?.id, bid = state.refineBlock) => `${pid}/${bid}`;
+const capture = new SentenceRecorder(update => {
+  const previous = state.capture.phase;
+  state.capture = {...state.capture, ...update};
+  if (update.seconds !== undefined && previous === update.phase) {
+    const timer = document.getElementById('recording-timer'); if (timer) timer.textContent = update.seconds.toFixed(1);
+  } else draw();
+}, (scope, file) => {
+  // A delayed permission/encoding result can never attach itself to another sentence.
+  setTake(scope.projectId, scope.blockId, file, 'microphone');
+});
+function setTake(pid, bid, file, mode) {
+  const key = takeKey(pid, bid), old = state.audioTakes[key];
+  if (old) URL.revokeObjectURL(old.url);
+  if (file) state.audioTakes[key] = {file, url:URL.createObjectURL(file), mode};
+  else delete state.audioTakes[key];
+  if (pid === state.project?.id && bid === state.refineBlock) state.recordingFile = file;
+}
+function openRefine(bid, tab = 'text') {
+  state.refineTab = tab; state.refineBlock = bid; state.selectedWordIds = []; state.keepBackground = false;
+  const take = state.audioTakes[takeKey()]; state.recordingFile = take?.file || null;
+  state.recordingMode = take?.mode || (tab === 'audio' ? 'microphone' : 'upload');
+  state.capture = {phase:'idle'}; draw();
+}
+
 
 function showNotice(message, kind = 'error', retry = null) {
   state.notice = { message, kind, retry: retry ? 'retry-operation' : '' };
@@ -24,6 +50,7 @@ function showNotice(message, kind = 'error', retry = null) {
 }
 
 function draw() {
+  const scrollPositions=[...app.querySelectorAll('[data-preserve-scroll][id]')].map(el=>[el.id,el.scrollTop]);
   const openDetails=[...app.querySelectorAll('details[id]')].filter(el=>el.open).map(el=>el.id);
   const oldMedia = [...app.querySelectorAll('video,audio')];
   const playback=new Map(oldMedia.map(m=>[m,{playing:!m.paused&&!m.ended,time:m.currentTime}]));
@@ -76,6 +103,7 @@ function draw() {
       draw();
     });
   }
+  scrollPositions.forEach(([id,top])=>{const el=document.getElementById(id);if(el)el.scrollTop=top;});
   const list = document.getElementById('block-list');
   if (list) list.scrollTop = listScroll;
   if (focusId) {
@@ -115,6 +143,7 @@ function setProject(next, isNew = false) {
     jobEpoch++;
     clearTimeout(projectTimer); clearTimeout(jobTimer); clearTimeout(processingTimer);
     state.processingJob=null; state.proposalV2=null; state.refineBlock=null; state.selectedWordIds=[];
+    if(capture.active)capture.cancel();state.workspaceTab='transcript';state.proposalFilter='pending';
     state.recordingFile=null;state.keepBackground=false;state.cutLoop=null;state.briefDraft=null;state.busy='';
     state.proposal = null; state.job = null; state.proposalPending = false;
     state.activeBlock = null; state.playheadMs = 0; state.onlyDeleted = false;
@@ -257,7 +286,7 @@ async function propose(mode = 'auto') {
   try {
     const candidate = await request(`/api/projects/${encodeURIComponent(id)}/proposals`, { method: 'POST', body: { expectedRevision: revision, mode }, timeout: 45000 });
     if (epoch !== projectEpoch || state.project?.id !== id) return;
-    state.proposal = candidate;
+    state.proposal = candidate;state.workspaceTab='suggestions';
     if (!isCurrentProposal(state.project, candidate)) showNotice('你刚修改了内容，这份建议已过期，请重新生成。', 'warning');
     else showNotice('建议已生成，查看将删除和恢复的内容，确认后再应用。', 'success');
   } catch (error) {
@@ -308,6 +337,7 @@ app.addEventListener('click', async event => {
   const target = event.target.closest('[data-action]');
   if (!target || target.disabled) return;
   const action = target.dataset.action, id = target.dataset.id;
+  if(capture.active && !['stop-recording','cancel-recording'].includes(action)){showNotice('请先结束或取消录音，再进行其他操作。');draw();return;}
   if (['delete', 'restore', 'lock', 'unlock'].includes(action)) { await mutate({ type: action, blockIds: [id] }); return; }
   switch (action) {
     case 'start-sample': await createSample(); break;
@@ -337,7 +367,21 @@ app.addEventListener('click', async event => {
     case 'stop-cut': state.cutLoop=null;document.getElementById('result-video')?.pause();draw();break;
     case 'stage-proof': state.refineTab='text';state.editorStage='proof'; state.refineBlock=state.project.blocks[0]?.id; state.selectedWordIds=[];draw(); break;
     case 'stage-edit': state.editorStage='edit'; draw(); break;
-    case 'refine': state.refineTab='text';state.keepBackground=false;state.refineBlock=id; state.selectedWordIds=[]; state.recordingFile=null; draw(); break;
+    case 'workspace-tab': state.workspaceTab=target.dataset.tab;draw();break;
+    case 'proposal-filter': state.proposalFilter=target.dataset.filter;draw();break;
+    case 'record-line': openRefine(id,'audio');break;
+    case 'refine': openRefine(id); break;
+    case 'recording-mode': state.recordingMode=target.dataset.mode;draw();break;
+    case 'start-recording': {
+      const block=state.project.blocks.find(b=>b.id===state.refineBlock);
+      if(!block||state.busy||state.health?.allowUploads===false||state.project.edit.lockedBlockIds.includes(block.id))break;
+      app.querySelectorAll('audio,video').forEach(m=>m.pause());
+      state.capture={phase:'idle',seconds:0};
+      await capture.start({projectId:state.project.id,blockId:block.id},(block.clipEndFrame-block.clipStartFrame)/30);break;
+    }
+    case 'stop-recording': capture.stop();break;
+    case 'cancel-recording': capture.cancel();break;
+    case 'discard-take': setTake(state.project.id,state.refineBlock,null,state.recordingMode);draw();break;
     case 'close-refine': state.refineBlock=null; state.selectedWordIds=[]; draw(); break;
     case 'refine-tab': state.refineTab=target.dataset.tab;draw();break;
     case 'discard-drafts': delete state.refineDrafts[state.project.id]?.[state.refineBlock];draw();break;
@@ -402,6 +446,7 @@ app.addEventListener('click', async event => {
 
 app.addEventListener('submit', async event => {
   event.preventDefault();
+  if(capture.active){showNotice('请先结束或取消录音。');draw();return;}
   if (event.target.id === 'import-form') await importFiles();
   const forms={'caption-edit-form':['correct_caption','caption'],'note-form':['annotate','note'],'rewrite-form':['set_rewrite','rewrite']};
   if(forms[event.target.id]) {
@@ -439,7 +484,7 @@ app.addEventListener('change', event => {
   if(input.id==='cut-index'){state.cutIndex=Number(input.value);state.cutLoop=null;draw();return;}
   if(input.id==='sample-picker'){state.selectedSampleId=input.value;draw();return;}
   if(['separate-import','separate-voice'].includes(input.id)){state.separateVoice=input.checked;return;}
-  if(input.name==='recording'){state.recordingFile=input.files[0]||null;return;}
+  if(input.name==='recording'){const file=input.files[0];if(file&&file.size>30*1024*1024){showNotice('补录文件不能超过30 MB。');draw();return;}if(file)setTake(state.project.id,state.refineBlock,file,'upload');draw();return;}
   if(input.name==='keepBackground'){state.keepBackground=input.checked;return;}
   if (input.type === 'file' && ['video', 'subtitles'].includes(input.name)) { state.files[input.name] = input.files[0] || null; state.notice = null; draw(); }
   else if (input.id === 'only-deleted') { state.onlyDeleted = input.checked; draw(); }
@@ -467,12 +512,12 @@ function pollProcessing(jid,immediate=false) {
       if(epoch!==projectEpoch || state.project?.id!==pid)return;
       state.processingJob=job;
       if(job.status==='succeeded') {
-        if(job.kind==='suggestions'){state.proposalV2=job.result;state.proposalPending=false;}
+        if(job.kind==='suggestions'){state.proposalV2=job.result;state.proposalPending=false;state.workspaceTab='suggestions';state.proposalFilter='pending';}
         if(job.kind==='separate')await refreshProject(pid);
       }
       if(['failed','interrupted'].includes(job.status))state.proposalPending=false;
       draw();
-      if(job.kind==='suggestions'&&job.status==='succeeded'&&!state.refineBlock)document.querySelector('.proposal-v2')?.scrollIntoView({block:'start',behavior:'smooth'});
+      if(job.kind==='suggestions'&&job.status==='succeeded'&&!state.refineBlock)document.querySelector('#review-column')?.scrollIntoView({block:'start',behavior:'smooth'});
       if(['queued','running'].includes(job.status))pollProcessing(jid);
     }catch(error){if(epoch!==projectEpoch)return;state.proposalPending=false;showNotice(error.message,'error',()=>pollProcessing(jid,true));draw();}
   },immediate?0:1000);
@@ -485,6 +530,7 @@ async function confirmProcessing(kind) {
   try {
     const p=await request(`/api/projects/${pid}/${kind}/confirm`,{method:'POST',body:{expectedRevision:state.project.revision,jobId:state.processingJob.id}});
     if(state.project?.id!==pid||epoch!==projectEpoch)return;
+    if(kind==='recordings')setTake(pid,state.processingJob.intent.blockId,null,'upload');
     setProject(p);state.processingJob=null;if(kind==='transcript')delete state.refineDrafts[pid];state.selectedWordIds=[];state.proposalV2=null;
     showNotice(kind==='transcript'?'识别稿已确认，可以校对和按词精剪。':'补录已应用，请生成短片检查声音和字幕。','success');
   }catch(error){if(epoch===projectEpoch)await handleFailure(error,()=>confirmProcessing(kind),pid);}
@@ -504,7 +550,9 @@ async function decideProposal(itemIds,decision) {
 
 async function uploadRecording() {
   if(state.health?.allowUploads===false){showNotice('公开样例模式不能上传补录。');draw();return;}
-  if(state.busy||!state.recordingFile){showNotice('请选择WAV、MP3或M4A补录文件。');draw();return;}
+  if(capture.active)return;
+  const take=state.audioTakes[takeKey()];state.recordingFile=take?.file||null;
+  if(state.busy||!state.recordingFile){showNotice('请先录音，或选择WAV、MP3、M4A补录文件。');draw();return;}
   const pid=state.project.id,epoch=projectEpoch,bid=state.refineBlock,form=new FormData();form.append('audio',state.recordingFile);
   form.append('expectedRevision',state.project.revision);form.append('blockId',state.refineBlock);form.append('keepBackground',String(state.keepBackground));
   state.busy='recording';draw();
@@ -513,7 +561,7 @@ async function uploadRecording() {
     if(state.project?.id!==pid||epoch!==projectEpoch)return;
     if(job.projectId!==pid||job.intent?.blockId!==bid)throw new ApiError('补录任务与当前片段不匹配，请重新检查。');
     state.processingJob=job;state.refineBlock=null;state.recordingFile=null;pollProcessing(job.id,true);
-  }catch(error){if(epoch===projectEpoch)await handleFailure(error,uploadRecording,pid);}
+  }catch(error){if(epoch===projectEpoch)await handleFailure(error,()=>{if(state.project?.id!==pid||state.refineBlock!==bid){showNotice('请回到原来的补录句子再重试。');draw();return;}return uploadRecording();},pid);}
   finally{if(epoch===projectEpoch){state.busy='';draw();}}
 }
 
@@ -546,11 +594,11 @@ async function boot() {
 boot();
 
 window.addEventListener('beforeunload',event=>{
-  if(Object.keys(state.refineDrafts).some(pid=>projectHasDrafts(state.refineDrafts,pid))){event.preventDefault();event.returnValue='';}
+  if(capture.active||Object.keys(state.audioTakes).length||Object.keys(state.refineDrafts).some(pid=>projectHasDrafts(state.refineDrafts,pid))){event.preventDefault();event.returnValue='';}
 });
 app.addEventListener('keydown',event=>{
   const dialog=document.querySelector('.refine-panel');if(!dialog)return;
-  if(event.key==='Escape'){event.preventDefault();state.refineBlock=null;state.selectedWordIds=[];draw();return;}
+  if(event.key==='Escape'){event.preventDefault();if(capture.active){showNotice('请先结束或取消录音。');draw();return;}state.refineBlock=null;state.selectedWordIds=[];draw();return;}
   if(event.key==='Tab'){
     const focusable=[...dialog.querySelectorAll('button:not([disabled]),input:not([disabled]),textarea,select,a[href]')].filter(el=>el.getClientRects().length);
     if(!focusable.length)return;
@@ -560,3 +608,5 @@ app.addEventListener('keydown',event=>{
   }
 });
 window.addEventListener('resize',()=>{if(document.querySelector('.refine-panel')?.contains(document.activeElement))document.activeElement.scrollIntoView({block:'nearest'});});
+
+window.addEventListener('pagehide',()=>{capture.cancel();Object.values(state.audioTakes).forEach(t=>URL.revokeObjectURL(t.url));state.audioTakes={};state.recordingFile=null;});

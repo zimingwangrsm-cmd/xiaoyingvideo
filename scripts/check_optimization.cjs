@@ -1,6 +1,6 @@
 const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
 const fs=require('node:fs'),path=require('node:path'),assert=require('node:assert/strict'),crypto=require('node:crypto');
-const root=path.resolve(__dirname,'..'),out=path.join(root,'deliverables/optimization');fs.mkdirSync(out,{recursive:true});
+const root=path.resolve(__dirname,'..'),out=path.resolve(process.env.EVIDENCE_DIR||path.join(root,'deliverables/optimization'));fs.mkdirSync(out,{recursive:true});
 const base=process.env.APP_URL||'http://127.0.0.1:8772',data=process.env.TEST_DATA_DIR||path.join(root,'data/optimization_acceptance');
 const checks=[],errors=[];const pass=(name,kind='real HTTP/browser')=>{checks.push({name,kind});console.log('PASS',name)};
 (async()=>{

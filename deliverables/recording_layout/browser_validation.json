@@ -1,0 +1,25 @@
+{
+  "checks": [
+    "real MediaRecorder capture, bounded WAV, preview, locked protection and microphone release",
+    "takes stay bound to project and sentence and survive drawer reopen",
+    "browser-recorded WAV reaches actual ASR and explicit sentence replacement",
+    "upload option, local preview and discard remain available",
+    "automatic sentence-length stop and explicit cancel release microphone",
+    "24 suggestions occupy the right pane with bounded scrolling, alongside preview",
+    "accept/reject filters and transcript/suggestions tabs stay functional",
+    "mobile-width suggestions and complete record/stop/preview/discard controls",
+    "confirmed microphone replacement renders and downloads as actual MP4",
+    "denied microphone permission gives an actionable upload fallback"
+  ],
+  "layout": {
+    "height": 1504,
+    "listHeight": 520,
+    "listScroll": 5759,
+    "left": 104,
+    "right": 670.5,
+    "overlap": 549.609375
+  },
+  "pageErrors": [],
+  "microphone": "Chromium fixture device using attributed source audio; actual getUserMedia/MediaRecorder/WAV/HTTP/ASR/render, not a physical-microphone or human-listening claim",
+  "suggestions": "24-item deterministic fixture + real decision API; model behavior unchanged"
+}

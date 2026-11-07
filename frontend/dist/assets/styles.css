@@ -2349,3 +2349,29 @@ select{font:inherit;max-width:100%;padding:8px;border:1px solid var(--line);bord
 @media(max-width:640px){.refine-topbar{top:-18px}.refine-panel{padding-bottom:calc(24px + env(safe-area-inset-bottom))}.refine-tabs .button,.word-chip{min-height:42px}.cut-audition .button{min-height:42px}.advanced-tools{margin-bottom:12px}.advanced-tools .caption{font-size:12px}}
 .task-brief{display:flex;gap:10px;align-items:center;margin-bottom:12px;font-size:12px}.task-brief input{min-width:0;flex:1;padding:9px;border:1px solid var(--line);border-radius:6px;font:inherit}
 @media(max-width:640px){.task-brief{flex-wrap:wrap}.task-brief label{width:100%}.task-brief .button{min-height:42px}}
+
+/* Sentence recording and balanced transcript/proposal workspace. */
+[hidden]{display:none!important}
+.review-column{min-width:0;display:grid;gap:12px;scroll-margin-top:20px}
+.review-tabs,.recording-modes,.suggestion-filters{display:flex;gap:8px;flex-wrap:wrap}
+.review-tabs [aria-selected="true"],.recording-modes [aria-pressed="true"],.suggestion-filters [aria-pressed="true"]{background:#e0f1ec;border-color:#087e76;color:#07675f}
+.review-column .proposal-v2,.review-column .proposal-panel{margin-top:0;padding:20px}
+.proposal-strategy{padding:10px 0;border-bottom:1px solid var(--line)}
+.proposal-strategy summary{cursor:pointer;font-size:13px;color:#07675f}
+.suggestion-list{max-height:clamp(300px,52vh,620px);overflow:auto;overscroll-behavior:contain;padding:0 8px 0 0;scrollbar-gutter:stable}
+.suggestion-list .suggestion-item{margin-top:12px;padding:14px}
+.suggestion-list .suggestion-item p{font-size:13px;line-height:1.65;overflow-wrap:anywhere}
+.suggestion-filters{padding:10px 0}.suggestion-filters .button{padding:8px 10px;min-height:38px;font-size:12px}
+.suggestion-actions{padding-top:14px;border-top:1px solid var(--line);margin-top:12px}
+.review-column .proposal-changes{max-height:52vh;overflow:auto;overscroll-behavior:contain}
+.empty-suggestions{padding:28px;font-size:14px;line-height:1.8;color:var(--muted)}
+.recording-modes{margin:16px 0}.microphone-controls{padding:14px;background:#f3f7f6;border-radius:8px}
+.recording-status{font-size:14px!important;font-variant-numeric:tabular-nums;min-height:26px}
+.recording-dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#c34136;margin-right:8px}
+.take-preview{margin:14px 0;padding:14px;border:1px solid var(--line);border-radius:8px;font-size:13px;overflow-wrap:anywhere}
+.take-preview audio{display:block;width:100%;margin:10px 0}
+@media(min-width:1000px){.preview-column{position:sticky;top:18px}.review-column .block-list{max-height:72vh;overflow:auto}}
+@media(max-width:760px){.suggestion-list{max-height:55vh}.review-tabs{position:sticky;top:0;z-index:2;background:#f5f7f8;padding:8px 0}.suggestion-filters .button{min-height:44px}.recording-modes .button,.microphone-controls .button{min-height:44px}.block-actions{flex-wrap:wrap}.review-column .proposal-v2{padding:14px}}
+.rewrite-script{padding:12px 0;font-size:13px;border-bottom:1px solid var(--line)}
+.rewrite-script summary{cursor:pointer;color:#07675f}
+.rewrite-script form{margin-top:12px!important;padding-top:0!important;border:0!important}

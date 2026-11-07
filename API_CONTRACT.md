@@ -66,3 +66,7 @@
 - 补录任务 DTO 的 `intent` 包含 blockId、blockText、fileName、keepBackground、原时长；确认结果标明补录时长。前端检查发起片段与返回片段一致。
 - 草稿是浏览器页内的 projectId/blockId/field 状态，切项目保留且隔离；仅对应成功且未被后续输入改变的字段清草稿。刷新/关闭由离开提示保护，未承诺磁盘草稿持久化。
 - local模式开放 `GET /delivery`、`GET /api/deliverables`、`GET /api/deliverables/{key}`；固定白名单，含文件大小与SHA256，MP4支持Range。public模式返回404。交付包不含private data目录或Cookie。
+
+## 2026-11-07 前端录音补充
+
+直接录音由用户点击后调用getUserMedia/MediaRecorder；本地转换为16位单声道WAV，沿用现有recordings上传/确认API，无新增服务端路由。录音及上传文件的本页试听草稿按projectId/blockId隔离，明确提交后才发给服务器。关闭重开同一句保留草稿；停止/取消释放流，取消后迟到的授权流立即关闭。WAV输出不超过所选句子帧时长；后端仍独立验证实际文件时长。

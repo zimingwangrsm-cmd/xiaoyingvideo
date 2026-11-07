@@ -125,8 +125,12 @@ def test_timeout_cleans_temporary_output(engineering, tmp_path, monkeypatch):
 
 def test_rotation_is_applied_and_small_portrait_is_not_enlarged(engineering, tmp_path):
     rotated = tmp_path / "rotated.mp4"
-    command(["ffmpeg", "-v", "error", "-nostdin", "-y", "-i", str(engineering[0] / "source_abc.mp4"),
-             "-c", "copy", "-metadata:s:v:0", "rotate=90", str(rotated)])
+    # FFmpeg 7 no longer writes display matrices via the legacy rotate tag.
+    help_text = command(["ffmpeg", "-hide_banner", "-h", "full"]).decode("utf-8", "replace")
+    rotation_input = ["-display_rotation:v:0", "90"] if "-display_rotation" in help_text else []
+    rotation_output = [] if rotation_input else ["-metadata:s:v:0", "rotate=90"]
+    command(["ffmpeg", "-v", "error", "-nostdin", "-y"] + rotation_input +
+            ["-i", str(engineering[0] / "source_abc.mp4"), "-c", "copy"] + rotation_output + [str(rotated)])
     original = media.probe_media(rotated)
     assert abs(original["rotation"]) == 90
     result = media.prepare_source(rotated, tmp_path / "portrait.mp4")
@@ -155,3 +159,15 @@ def test_real_181_second_input_is_rejected_before_preparation(tmp_path):
     with pytest.raises(ValueError, match="超过 180 秒"):
         media.prepare_source(source, tmp_path / "invalid.mp4")
     assert not (tmp_path / "invalid.mp4").exists()
+
+
+
+def test_concat_output_has_exact_constant_frame_rate(engineering, tmp_path):
+    source, fixture = engineering
+    for name, spans in [("cut", fixture["spans"]), ("full", [{"sourceStartFrame": 0, "sourceEndFrame": 180, "outputStartFrame": 0}])]:
+        out = tmp_path / (name + ".mp4")
+        info = media.render_spans(source / "source_abc.mp4", spans, out)
+        expected = sum(s["sourceEndFrame"] - s["sourceStartFrame"] for s in spans)
+        assert info["fps"] == 30
+        assert info["totalFrames"] == expected
+        assert abs(info["videoDurationMs"] - expected * 1000 / 30) < 1

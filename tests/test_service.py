@@ -227,10 +227,17 @@ def test_edit_during_render_marks_result_old_and_blocks_all_current_downloads(ap
     assert probe_media(instance.artifact_path(owner, fresh["artifactId"], "video"))["totalFrames"] == 120
 
 
-def test_actual_encoder_overshoot_blocks_download_until_same_job_is_acknowledged(app):
+def test_reported_encoder_overshoot_blocks_download_until_same_job_is_acknowledged(app, monkeypatch):
     instance, owner, project = app
     project = action(app, project, "delete", blockIds=["s02"])
     project = action(app, project, "set_target", targetMs=4000)
+    # Actual AAC padding varies by FFmpeg version. Render real media, then
+    # deterministically simulate a small overrun in the reported encoder result.
+    real_render = service_module.render_spans
+    def overshoot(*args, **kwargs):
+        result = real_render(*args, **kwargs)
+        return dict(result, durationMs=result["durationMs"] + 22)
+    monkeypatch.setattr(service_module, "render_spans", overshoot)
     job = completed(app, render(app, project))
     assert job["status"] == "succeeded" and job["actualDurationMs"] > 4000
     expect_error("actual_over_target", lambda: instance.artifact_path(owner, job["artifactId"], "video"), 409)
@@ -404,3 +411,4 @@ def test_repeating_current_selection_keeps_revision_history_and_artifact(app):
         assert instance.get_job(owner, job['id'])['isCurrent']
     undone = action(app, project, 'undo')
     assert 's02' in undone['edit']['keptBlockIds']
+

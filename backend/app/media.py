@@ -103,7 +103,10 @@ def _temp_path(output_path):
 
 
 def _encoder_args():
-    return ["-c:v", "libx264", "-threads", "2", "-preset", "veryfast", "-crf", "21",
+    # concat uses a microsecond timebase. FFmpeg 7 may otherwise write an
+    # incorrect last-frame duration / average FPS despite 30 fps input.
+    # Set the output grid explicitly; retain strict frame-count validation.
+    return ["-r", str(FPS), "-fps_mode", "cfr", "-c:v", "libx264", "-threads", "2", "-preset", "veryfast", "-crf", "21",
             "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "128k", "-ar", "48000",
             "-movflags", "+faststart", "-map_metadata", "-1", "-metadata:s:v:0", "rotate=0"]
 

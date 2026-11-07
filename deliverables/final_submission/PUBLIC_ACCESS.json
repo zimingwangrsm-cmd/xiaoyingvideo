@@ -1,0 +1,40 @@
+{
+  "verifiedAt": "2026-11-07T05:22:54.058923+00:00",
+  "applicationCommit": "fce60bfcbaf96a4b2574bc6b582753d0561f4424",
+  "mainArtifactsCommit": "bd1e8e741aa116bccaed91a6fc05867e15abd779",
+  "archiveCommit": "3555893aba12b0e82c2f0ffd405db9d351557af6",
+  "githubAuthenticationUsed": false,
+  "cookiesUsed": false,
+  "allManifestFilesMatchedInPublicArchive": 36,
+  "checks": [
+    {
+      "url": "https://codeload.github.com/zimingwangrsm-cmd/xiaoyingvideo/zip/refs/heads/delivery-final-20261107-fce60bf",
+      "status": 200,
+      "contentType": "application/zip",
+      "bytes": 11488125,
+      "sha256": "50889368f33fc3e54d945866954ba10d9e4f086b7005be4796451539bb7f9020"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/zimingwangrsm-cmd/xiaoyingvideo/bd1e8e741aa116bccaed91a6fc05867e15abd779/deliverables/final_submission/product_brief_5pages.pdf",
+      "status": 200,
+      "contentType": "application/octet-stream",
+      "bytes": 221428,
+      "sha256": "13c3f27cbad4288c40cc7d5e6198c23cf15b1836bc62f70c05d74f69b558e08f"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/zimingwangrsm-cmd/xiaoyingvideo/bd1e8e741aa116bccaed91a6fc05867e15abd779/deliverables/final_submission/ai_usage_record.pdf",
+      "status": 200,
+      "contentType": "application/octet-stream",
+      "bytes": 148492,
+      "sha256": "1fcf7abe96b0f0b73bd62081ed2cd8c6b8b31c6e3f3e6330ba90c816549c9ea1"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/zimingwangrsm-cmd/xiaoyingvideo/bd1e8e741aa116bccaed91a6fc05867e15abd779/deliverables/final_submission/demo_walkthrough.mp4",
+      "status": 200,
+      "contentType": "application/octet-stream",
+      "bytes": 3239186,
+      "sha256": "2e90cee3c603826df599148f3f7f0828ecc1a60cb6c9c79c2ad2b6e6f28a8113"
+    }
+  ],
+  "note": "Anonymous urllib GETs with no GitHub Authorization or Cookie headers; archive contents match the local manifest. GitHub archive and local ZIP have different container metadata, same listed file bytes."
+}

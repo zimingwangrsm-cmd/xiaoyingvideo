@@ -29,7 +29,7 @@
 
 本轮核对原始公开 ZIP 的 36 个清单条目，尺寸与 SHA-256 全部匹配；离线入口引用的本地文件齐全。文稿修改后重新计算受影响文件的清单，演示视频、截图、成片和原始验证记录保持原样。
 
-本分支提供润色后的文稿。原 delivery-final-20261107-fce60bf 下载包仍是原版文字，正式交付前应同步更新；同一文件不要混用不同版本。源码首次运行与实际导出另行复测，启动修正及新复测报告不由本次文字修改代替。
+本整合包已同步润色后的PDF、DOCX和Markdown，并保留原演示视频。请使用README中的delivery-reviewed-20261107展示包与final-reviewed-source-20261107源码入口；旧包作为历史版本保留。启动修正和独立复测见RUN_CHECK.md。
 
 按“视频或截图流程”方式提交，无需提供公开网页。若另提供可交互网页，仍需满足免登录访问要求。物理设备、人工音质听审和专名字幕确认保留为作者最终检查项。
 
@@ -37,4 +37,4 @@
 
 审阅后发现原启动脚本会强制生成缺失样例，首次环境缺 eSpeak 时无法启动。修正已单独提交至 [1d23c83](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/commit/1d23c83b97ea0e0366d771a5509d7c35a9c6ae69)：默认直接启动上传流程，样例生成为可选。新增 3 项启动测试后合计 70 项后端检查通过；16 项前端检查、构建通过。实际启动服务，上传交付包 MP4 与 SRT，再次剪辑、导出和下载，6.5 秒／195 帧／30 fps 的 H.264/AAC 成片完整解码通过。
 
-运行应用请参阅[首次启动指南](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/blob/1d23c83b97ea0e0366d771a5509d7c35a9c6ae69/FIRST_RUN.md)；详细范围见[独立复核报告](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/blob/1d23c83b97ea0e0366d771a5509d7c35a9c6ae69/deliverables/final_review/INDEPENDENT_CHECK.md)。启动修正在独立分支，需合并后使用；本次文稿分支没有改应用代码。原录屏和模型运行的历史证据保持原版本，本次 HTTP 复测不替代新一轮浏览器与模型质量验收。
+运行应用请参阅[首次启动指南](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/blob/final-reviewed-source-20261107/FIRST_RUN.md)；详细范围见[独立复核报告](https://github.com/zimingwangrsm-cmd/xiaoyingvideo/blob/final-reviewed-source-20261107/deliverables/final_review/INDEPENDENT_CHECK.md)。本整合源码已包含启动修正和润色文稿，展示包附有相应运行入口。原录屏和模型运行的历史证据保持原版本，本次 HTTP 复测不替代新一轮浏览器与模型质量验收。

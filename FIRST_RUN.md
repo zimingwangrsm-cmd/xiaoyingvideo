@@ -1,6 +1,6 @@
 # 首次运行编辑器
 
-只查看最终演示、报告和截图：下载[提交附件包](https://codeload.github.com/zimingwangrsm-cmd/xiaoyingvideo/zip/refs/heads/delivery-final-20261107-fce60bf)，解压后打开 START_HERE.html。附件包是离线展示材料，不包含编辑器源码或模型。
+只查看最终演示、报告和截图：下载[提交附件包](https://codeload.github.com/zimingwangrsm-cmd/xiaoyingvideo/zip/refs/heads/delivery-reviewed-20261107)，解压后打开 START_HERE.html。附件包是离线展示材料，不包含编辑器源码或模型。
 
 ## 不下载模型，先完成一次真实剪辑
 

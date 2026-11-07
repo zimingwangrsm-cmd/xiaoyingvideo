@@ -1,0 +1,9 @@
+{
+  "ended": true,
+  "time": 171.56,
+  "duration": 171.56,
+  "width": 1440,
+  "frames": 4289,
+  "error": null,
+  "method": "Full-duration Chrome playback through real HTTP Range endpoint; virtual audio clock, not human listening"
+}

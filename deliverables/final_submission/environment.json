@@ -1,0 +1,30 @@
+{
+  "baseCommit": "1c2ed70a949db7de3c1b156539810bcc1fd4e067",
+  "integratedRepair": "538fa8e9da2dcaaec3b25520dc7360bbde036eb9",
+  "python": "3.9.13",
+  "ffmpeg": "ffmpeg version 4.2.7-0ubuntu0.1 Copyright (c) 2000-2022 the FFmpeg developers",
+  "packages": {
+    "fastapi": "0.100.0",
+    "pydantic": "1.10.26",
+    "uvicorn": "0.23.1",
+    "python-multipart": "0.0.6",
+    "pytest": "8.3.5",
+    "httpx": "0.24.1",
+    "starlette": "0.27.0",
+    "anyio": "4.12.1"
+  },
+  "backendTests": 67,
+  "backendSeconds": 57.02,
+  "frontendTests": 16,
+  "compileall": "passed",
+  "frontendBuild": "passed",
+  "environment": "Clean data/final_runtime venv; no inherited site-packages",
+  "encoding": "Explicit 30 fps; fps_mode=cfr when supported, vsync=cfr on FFmpeg 4.2",
+  "speechInUnitTests": "Test doubles; real model/browser evidence is separately recorded in final_submission",
+  "applicationCommit": "fce60bfcbaf96a4b2574bc6b582753d0561f4424",
+  "libreoffice": "LibreOffice 6.4.7.2 40(Build:2)",
+  "node": "v20.20.0",
+  "productBriefPages": 5,
+  "aiRecordPages": 2,
+  "speechEnvironment": "requirements-speech-lock.txt"
+}

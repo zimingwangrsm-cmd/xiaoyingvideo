@@ -1,0 +1,701 @@
+{
+  "elapsedSeconds": 149.276,
+  "backendElapsedSeconds": 148.2,
+  "source": "local_llm",
+  "brief": "一分钟个人语言背景简介。保留云南来源、泰国出生、八岁移居台湾的完整时间线与一句结束语；整组省略家庭成员工作、书店活动、地址和邀约，避免“这里”“还有”等失去前提。可以短于60秒，不必填满。",
+  "proposal": {
+    "id": "b0a99fd00c044e3baa5bef7c41e41445",
+    "projectId": "20b5e8ab7fd244e5bf962ede8ff44748",
+    "baseRevision": 2,
+    "source": "local_llm",
+    "strategy": "保留云南来源、泰国出生、八岁移居台湾的关键信息，省略家庭成员工作、书店活动、地址和邀约等无关信息。",
+    "items": [
+      {
+        "id": "i01",
+        "blockId": "s04",
+        "blockIds": [
+          "s04"
+        ],
+        "type": "delete_block",
+        "before": "我爸我妈都是从云南国科到老面。",
+        "after": "整组删除：s04",
+        "reason": "家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s04"
+          ]
+        },
+        "durationDeltaMs": -4233.333,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i02",
+        "blockId": "s05",
+        "blockIds": [
+          "s05"
+        ],
+        "type": "delete_block",
+        "before": "后来又再到泰国。",
+        "after": "整组删除：s05",
+        "reason": "家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s05"
+          ]
+        },
+        "durationDeltaMs": -2400,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i03",
+        "blockId": "s06",
+        "blockIds": [
+          "s06"
+        ],
+        "type": "delete_block",
+        "before": "前来梅塞还有清迈那里。",
+        "after": "整组删除：s06",
+        "reason": "家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s06"
+          ]
+        },
+        "durationDeltaMs": -4566.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i04",
+        "blockId": "s07",
+        "blockIds": [
+          "s07"
+        ],
+        "type": "delete_block",
+        "before": "从小我们家就。",
+        "after": "整组删除：s07",
+        "reason": "家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s07"
+          ]
+        },
+        "durationDeltaMs": -2466.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i05",
+        "blockId": "s09",
+        "blockIds": [
+          "s09"
+        ],
+        "type": "delete_block",
+        "before": "现在我是住在桃园的古。",
+        "after": "整组删除：s09",
+        "reason": "具体地址信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s09"
+          ]
+        },
+        "durationDeltaMs": -3366.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i06",
+        "blockId": "s10",
+        "blockIds": [
+          "s10"
+        ],
+        "type": "delete_block",
+        "before": "那现在我家里还有三个人。",
+        "after": "整组删除：s10",
+        "reason": "具体家庭成员信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s10"
+          ]
+        },
+        "durationDeltaMs": -3333.333,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i07",
+        "blockId": "s11",
+        "blockIds": [
+          "s11"
+        ],
+        "type": "delete_block",
+        "before": "我妈我哥还有我。",
+        "after": "整组删除：s11",
+        "reason": "具体家庭成员信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s11"
+          ]
+        },
+        "durationDeltaMs": -1966.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i08",
+        "blockId": "s12",
+        "blockIds": [
+          "s12"
+        ],
+        "type": "delete_block",
+        "before": "我妈现在是在做那个人力总结公司里面是当翻译。",
+        "after": "整组删除：s12",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s12"
+          ]
+        },
+        "durationDeltaMs": -5766.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i09",
+        "blockId": "s13",
+        "blockIds": [
+          "s13"
+        ],
+        "type": "delete_block",
+        "before": "台湾翻译。",
+        "after": "整组删除：s13",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s13"
+          ]
+        },
+        "durationDeltaMs": -1266.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i10",
+        "blockId": "s14",
+        "blockIds": [
+          "s14"
+        ],
+        "type": "delete_block",
+        "before": "我哥们现在在晚上也在读中文。",
+        "after": "整组删除：s14",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s14"
+          ]
+        },
+        "durationDeltaMs": -5233.333,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i11",
+        "blockId": "s15",
+        "blockIds": [
+          "s15"
+        ],
+        "type": "delete_block",
+        "before": "他跟我讲说。",
+        "after": "整组删除：s15",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s15"
+          ]
+        },
+        "durationDeltaMs": -1500,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i12",
+        "blockId": "s16",
+        "blockIds": [
+          "s16"
+        ],
+        "type": "delete_block",
+        "before": "他现在有你朋友还单身。",
+        "after": "整组删除：s16",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s16"
+          ]
+        },
+        "durationDeltaMs": -2600,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i13",
+        "blockId": "s17",
+        "blockIds": [
+          "s17"
+        ],
+        "type": "delete_block",
+        "before": "如果说有意思。",
+        "after": "整组删除：s17",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s17"
+          ]
+        },
+        "durationDeltaMs": -2766.667,
+        "riskHints": [
+          "condition"
+        ],
+        "requiresRecording": false
+      },
+      {
+        "id": "i14",
+        "blockId": "s18",
+        "blockIds": [
+          "s18"
+        ],
+        "type": "delete_block",
+        "before": "可以跟我联络他。",
+        "after": "整组删除：s18",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s18"
+          ]
+        },
+        "durationDeltaMs": -2566.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i15",
+        "blockId": "s19",
+        "blockIds": [
+          "s19"
+        ],
+        "type": "delete_block",
+        "before": "我们现在是在桃园发的社团。",
+        "after": "整组删除：s19",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s19"
+          ]
+        },
+        "durationDeltaMs": -5033.333,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i16",
+        "blockId": "s20",
+        "blockIds": [
+          "s20"
+        ],
+        "type": "delete_block",
+        "before": "教台文。",
+        "after": "整组删除：s20",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s20"
+          ]
+        },
+        "durationDeltaMs": -1800,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i17",
+        "blockId": "s21",
+        "blockIds": [
+          "s21"
+        ],
+        "type": "delete_block",
+        "before": "现在这次故事叫东南亚书典。",
+        "after": "整组删除：s21",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s21"
+          ]
+        },
+        "durationDeltaMs": -4866.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i18",
+        "blockId": "s22",
+        "blockIds": [
+          "s22"
+        ],
+        "type": "delete_block",
+        "before": "我又在这个礼拜六晚上叫越南人讲中国话。",
+        "after": "整组删除：s22",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s22"
+          ]
+        },
+        "durationDeltaMs": -6300,
+        "riskHints": [
+          "context"
+        ],
+        "requiresRecording": false
+      },
+      {
+        "id": "i19",
+        "blockId": "s23",
+        "blockIds": [
+          "s23"
+        ],
+        "type": "delete_block",
+        "before": "那我介绍一下这个书店。",
+        "after": "整组删除：s23",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s23"
+          ]
+        },
+        "durationDeltaMs": -3666.667,
+        "riskHints": [
+          "context"
+        ],
+        "requiresRecording": false
+      },
+      {
+        "id": "i20",
+        "blockId": "s24",
+        "blockIds": [
+          "s24"
+        ],
+        "type": "delete_block",
+        "before": "它是可以来解一些东南亚的书。",
+        "after": "整组删除：s24",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s24"
+          ]
+        },
+        "durationDeltaMs": -5633.333,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i21",
+        "blockId": "s25",
+        "blockIds": [
+          "s25"
+        ],
+        "type": "delete_block",
+        "before": "有时候越是会办一些活动。",
+        "after": "整组删除：s25",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s25"
+          ]
+        },
+        "durationDeltaMs": -2833.333,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i22",
+        "blockId": "s26",
+        "blockIds": [
+          "s26"
+        ],
+        "type": "delete_block",
+        "before": "像是会做泰国的一些事物。",
+        "after": "整组删除：s26",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s26"
+          ]
+        },
+        "durationDeltaMs": -3200,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i23",
+        "blockId": "s27",
+        "blockIds": [
+          "s27"
+        ],
+        "type": "delete_block",
+        "before": "越南的事物。",
+        "after": "整组删除：s27",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s27"
+          ]
+        },
+        "durationDeltaMs": -1200,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i24",
+        "blockId": "s28",
+        "blockIds": [
+          "s28"
+        ],
+        "type": "delete_block",
+        "before": "印尼的事物。",
+        "after": "整组删除：s28",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s28"
+          ]
+        },
+        "durationDeltaMs": -1200,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i25",
+        "blockId": "s29",
+        "blockIds": [
+          "s29"
+        ],
+        "type": "delete_block",
+        "before": "文化这种。",
+        "after": "整组删除：s29",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s29"
+          ]
+        },
+        "durationDeltaMs": -1700,
+        "riskHints": [
+          "context"
+        ],
+        "requiresRecording": false
+      },
+      {
+        "id": "i26",
+        "blockId": "s30",
+        "blockIds": [
+          "s30"
+        ],
+        "type": "delete_block",
+        "before": "如果大家有兴趣的话。",
+        "after": "整组删除：s30",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s30"
+          ]
+        },
+        "durationDeltaMs": -2100,
+        "riskHints": [
+          "condition"
+        ],
+        "requiresRecording": false
+      },
+      {
+        "id": "i27",
+        "blockId": "s31",
+        "blockIds": [
+          "s31"
+        ],
+        "type": "delete_block",
+        "before": "可以来到我们去见面。",
+        "after": "整组删除：s31",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s31"
+          ]
+        },
+        "durationDeltaMs": -2500,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i28",
+        "blockId": "s32",
+        "blockIds": [
+          "s32"
+        ],
+        "type": "delete_block",
+        "before": "这里的位置是爱做桃园和火车站。",
+        "after": "整组删除：s32",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s32"
+          ]
+        },
+        "durationDeltaMs": -5000,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i29",
+        "blockId": "s33",
+        "blockIds": [
+          "s33"
+        ],
+        "type": "delete_block",
+        "before": "今天很谢谢大家来看。",
+        "after": "整组删除：s33",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s33"
+          ]
+        },
+        "durationDeltaMs": -4266.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i30",
+        "blockId": "s34",
+        "blockIds": [
+          "s34"
+        ],
+        "type": "delete_block",
+        "before": "我朋友帮我们拍的影片。",
+        "after": "整组删除：s34",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s34"
+          ]
+        },
+        "durationDeltaMs": -4066.667,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i31",
+        "blockId": "s35",
+        "blockIds": [
+          "s35"
+        ],
+        "type": "delete_block",
+        "before": "谢谢大家。",
+        "after": "整组删除：s35",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s35"
+          ]
+        },
+        "durationDeltaMs": -1700,
+        "riskHints": [],
+        "requiresRecording": false
+      },
+      {
+        "id": "i32",
+        "blockId": "s36",
+        "blockIds": [
+          "s36"
+        ],
+        "type": "delete_block",
+        "before": "有机会我们来见面。",
+        "after": "整组删除：s36",
+        "reason": "具体家庭成员工作信息无关主线。",
+        "status": "pending",
+        "action": {
+          "type": "delete",
+          "blockIds": [
+            "s36"
+          ]
+        },
+        "durationDeltaMs": -1933.333,
+        "riskHints": [],
+        "requiresRecording": false
+      }
+    ],
+    "currentDurationMs": 128200,
+    "estimatedDurationMs": 25166.666666666668,
+    "fallbackMessage": null
+  },
+  "note": "Actual local model call on final code before continuous recording; recorded demo starts at review of this completed result."
+}

@@ -14,12 +14,16 @@ const checks = [];
 const errors = [];
 function pass(name, details = {}) { checks.push({ name, ...details }); console.log('PASS', name); }
 (async () => {
-  const browser = await chromium.launch({ headless: true, executablePath: process.env.CHROME_EXECUTABLE });
+  const browser = await chromium.launch({ headless: true, args: ["--disable-audio-output"], executablePath: process.env.CHROME_EXECUTABLE });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, acceptDownloads: true });
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   let project;
   async function action(selector) {
+    // The current editor puts transcript controls behind a tab after reviewing suggestions.
+    if (!(await page.locator(selector).first().isVisible()) && await page.locator('[data-action="workspace-tab"][data-tab="transcript"]').count()) {
+      await page.locator('[data-action="workspace-tab"][data-tab="transcript"]').click();
+    }
     const [response] = await Promise.all([
       page.waitForResponse(r => r.url().endsWith('/actions') && r.request().method() === 'POST'),
       page.locator(selector).first().click(),
@@ -89,6 +93,7 @@ function pass(name, details = {}) { checks.push({ name, ...details }); console.l
     await action('[data-action="apply-proposal"]');
     assert.deepEqual(project.edit.keptBlockIds, afterProposal.keptBlockIds);
     const deleted = project.blocks.find(b => !project.edit.keptBlockIds.includes(b.id)).id;
+    if(await page.locator('[data-action="workspace-tab"][data-tab="transcript"]').count())await page.locator('[data-action="workspace-tab"][data-tab="transcript"]').click();
     await page.locator('#only-deleted').check();
     assert.equal(await page.locator('.edit-block').count(), project.metrics.deletedCount);
     await action(`[data-action="restore"][data-id="${deleted}"]`);

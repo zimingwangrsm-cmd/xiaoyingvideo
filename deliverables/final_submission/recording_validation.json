@@ -1,0 +1,54 @@
+{
+  "applicationCommit": "fce60bfcbaf96a4b2574bc6b582753d0561f4424",
+  "durationSeconds": 171.56,
+  "frames": 4289,
+  "meanVolumeDb": -30.4,
+  "steps": [
+    {
+      "second": 0.002,
+      "text": "任务：把128秒语言分享整理成一分钟内简介；主线和必留由用户确定。模型推理 148.2 秒已提前完成。"
+    },
+    {
+      "second": 16,
+      "text": "查看真实Qwen建议和理由；确认前不会修改视频。推理等待未纳入本段连续录屏。"
+    },
+    {
+      "second": 27.999,
+      "text": "接受一项、拒绝一项，再确认其余待处理建议；每项操作都经过版本和必留校验。"
+    },
+    {
+      "second": 45.001,
+      "text": "返回文稿，手动删一句后撤销；系统保留作者对内容的最终控制。"
+    },
+    {
+      "second": 60,
+      "text": "补录演示使用授权样例的测试麦克风输入，不是本人真人新录；支持上传或直接录音，每句最多60秒。"
+    },
+    {
+      "second": 79.999,
+      "text": "试听后提交真实本地识别，再确认替换；修改字幕与修改声音是不同操作。"
+    },
+    {
+      "second": 105,
+      "text": "测试补录已恢复原声。现在模拟一次网络请求中断：编辑仍保留，重试后继续生成。"
+    },
+    {
+      "second": 130,
+      "text": "真实渲染完成；播放结果并检查切口。专名字幕仍待作者核对，渲染成功不等于质量听审通过。"
+    },
+    {
+      "second": 149.001,
+      "text": "下载真实MP4、同步SRT与编辑记录；这些文件属于同一次编辑快照。"
+    },
+    {
+      "second": 158.001,
+      "text": "下载后继续修改，旧成片会标为上一版，防止下载与当前选择不一致的结果。"
+    },
+    {
+      "second": 169.999,
+      "text": "演示结束：目标、确认、补录、失败恢复与真实输出已连通；最终内容仍由作者审阅。"
+    }
+  ],
+  "pageErrors": [],
+  "method": "Continuous X11 desktop + actual browser playback audio, no speed changes or montage. On-screen explanatory banner. Real model proposal prepared before recording; elapsed inference disclosed. Fixture microphone; one browser-aborted network request for failure recovery; server fault injection disabled."
+}

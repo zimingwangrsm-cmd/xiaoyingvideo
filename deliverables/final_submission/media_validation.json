@@ -1,0 +1,9 @@
+{
+  "actualSeconds": 27.588,
+  "videoFrames": 827,
+  "fps": "30/1",
+  "captions": 6,
+  "videoAndSrtMatchRecord": true,
+  "fullRecordingDecode": "FFmpeg completed without decode errors",
+  "humanListening": "not claimed"
+}

@@ -1,0 +1,187 @@
+{
+  "applicationCommit": "fce60bfcbaf96a4b2574bc6b582753d0561f4424",
+  "documentsSourceCommit": "cd063651edf49767dbd15f9fbd7a51446f379c63",
+  "note": "Manifest excludes itself, package ZIP and post-publication access receipt to avoid circular hashes. No private data, cookies, credentials or model weights.",
+  "files": [
+    {
+      "path": "AI_USAGE.md",
+      "bytes": 4188,
+      "sha256": "5a10a3ed78447649ee1d71f91b9d25cca7d39117cafa010025035ccb4d7d9fc0"
+    },
+    {
+      "path": "ATTRIBUTION.md",
+      "bytes": 1311,
+      "sha256": "807586dfc86806fb52c7652fa043fbc37b2f18029b861bcadddb0af0eb9c8b6b"
+    },
+    {
+      "path": "DEMO_FLOW.md",
+      "bytes": 1702,
+      "sha256": "5af6c94db421fc4271cb262bc4beac6a3db2903a2f9af7836af4e3a7824d3811"
+    },
+    {
+      "path": "DEMO_FLOW.pdf",
+      "bytes": 4008247,
+      "sha256": "c9e2557c333f5bd3bc697bdfe5e5ffd23ea31e3bdaec16ba15f072efd795e8c9"
+    },
+    {
+      "path": "FINAL_VALIDATION.md",
+      "bytes": 4618,
+      "sha256": "97b869a28bed6aebf9332d65e2b125324f540e1fcf0579a193bf28bb1bef15bd"
+    },
+    {
+      "path": "PRODUCT_BRIEF.md",
+      "bytes": 9257,
+      "sha256": "f9406dcfe80694278f8257a18975c64c1ff499cf438630d56506d0f7cb137fce"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2964,
+      "sha256": "7158189fc2eba3cde573a8459ad752c68fbab66185803d3d93e5cd37d07094b6"
+    },
+    {
+      "path": "START_HERE.html",
+      "bytes": 3665,
+      "sha256": "ba897ff6c578a98752079c7c41ac3841a3e8b1212e572d4ccab3f95d8ac2b9e6"
+    },
+    {
+      "path": "WORDING_REVIEW.md",
+      "bytes": 444,
+      "sha256": "b332f0560605c7509eea8a5aa84b62e13a28a53c8784c0b3335c71e553b1e2f0"
+    },
+    {
+      "path": "ai_usage_record.docx",
+      "bytes": 39929,
+      "sha256": "029fb881bed486be85c1e74e75dbd66e8f5c357772c1cae06d15d76f40de50e3"
+    },
+    {
+      "path": "ai_usage_record.pdf",
+      "bytes": 148492,
+      "sha256": "1fcf7abe96b0f0b73bd62081ed2cd8c6b8b31c6e3f3e6330ba90c816549c9ea1"
+    },
+    {
+      "path": "browser_regression.json",
+      "bytes": 1130,
+      "sha256": "257473010fd3ea179417b1a778b6cbdb1fec61b09ca6fcdda6aebf4306549baa"
+    },
+    {
+      "path": "demo_edit_record.json",
+      "bytes": 5157,
+      "sha256": "b6f28dd713e8716a600d0679d4122080d17b92009959b5fd23d1282830cad6ae"
+    },
+    {
+      "path": "demo_result.mp4",
+      "bytes": 2263547,
+      "sha256": "ecea478605f14cf0abd2a6ecc5b6a74484d4a7fc42dece29eae368902f03eaf5"
+    },
+    {
+      "path": "demo_result.srt",
+      "bytes": 427,
+      "sha256": "ee626bb9d476abc10fa0bd99d4d9bf5e53d6ed5df720b59800b1b297e80f2884"
+    },
+    {
+      "path": "demo_walkthrough.mp4",
+      "bytes": 3239186,
+      "sha256": "2e90cee3c603826df599148f3f7f0828ecc1a60cb6c9c79c2ad2b6e6f28a8113"
+    },
+    {
+      "path": "deployment_validation.json",
+      "bytes": 227,
+      "sha256": "51078331138afcf718353850006298faa2926e045adacf086b5abed41d5a1916"
+    },
+    {
+      "path": "environment.json",
+      "bytes": 1118,
+      "sha256": "20ba6ecf356c07e951b28f0ae9b5d3735380073c34280980eea2e8a861fd7f6c"
+    },
+    {
+      "path": "full_playback_validation.json",
+      "bytes": 232,
+      "sha256": "a8701e46151dbc6b8c4625cd322379ab445e272d2ab1d12ae9bbaa32dc33fec4"
+    },
+    {
+      "path": "legacy_browser_validation.json",
+      "bytes": 2464,
+      "sha256": "3d370cd08845d6c43b959634445f39a354dafb8bf274fedbe9736d82a593a46f"
+    },
+    {
+      "path": "media_validation.json",
+      "bytes": 222,
+      "sha256": "93882ebf4395c10666cbd63a91b4af7474249da3cd5fca7b648dacce7f9729b5"
+    },
+    {
+      "path": "minute_check/browser_validation.json",
+      "bytes": 343,
+      "sha256": "de84f75b7f28756a8c41cfcbe54f61cb64bde394aa0cb50e6d9bd1b9363a4be9"
+    },
+    {
+      "path": "model_manifest.json",
+      "bytes": 2081,
+      "sha256": "51b4eccccb8261f1043bd55c314cb548c15ffb6bb99fd45c62dcfbd61cd68250"
+    },
+    {
+      "path": "product_brief_5pages.docx",
+      "bytes": 42476,
+      "sha256": "97d11f3c88b096ff1e44463b7418624f0db8252700b74f29ca660f984cc7d5d6"
+    },
+    {
+      "path": "product_brief_5pages.pdf",
+      "bytes": 221428,
+      "sha256": "13c3f27cbad4288c40cc7d5e6198c23cf15b1836bc62f70c05d74f69b558e08f"
+    },
+    {
+      "path": "real_inference.json",
+      "bytes": 18442,
+      "sha256": "40b8285dd7fd7b006e50a74e0659de6cd048cae1c2c11043e36feb104ae60505"
+    },
+    {
+      "path": "recording_validation.json",
+      "bytes": 2285,
+      "sha256": "06fa0325b64d3e269bf4bdc69569c22c18764e7256276930459e30cc5c505b58"
+    },
+    {
+      "path": "runtime_packages.txt",
+      "bytes": 362,
+      "sha256": "ea9988b458bbf46e7fba9fa879a98be1e0c0ba1936beced6dee3483a54d213fa"
+    },
+    {
+      "path": "screenshots/01-entry.png",
+      "bytes": 275545,
+      "sha256": "663cb0126fa4f4f23af76a74a6c83f8302092591759fc2c25f0077b400ad3841"
+    },
+    {
+      "path": "screenshots/02-locked-conflict.png",
+      "bytes": 354726,
+      "sha256": "d53aa52705a7ae018377f11199cb4452da8e7e57bf7cb45370116474c4a8d41e"
+    },
+    {
+      "path": "screenshots/03-transcript.png",
+      "bytes": 298848,
+      "sha256": "6b9eb9a76a7205f03dcb55235f7d1f379755a1715da8358d2e814fec2816b8ec"
+    },
+    {
+      "path": "screenshots/04-real-suggestions.png",
+      "bytes": 330214,
+      "sha256": "3290f16f21028076dc6f5e9bf10e2fbbbac61c7fbe988a15de9612ed253aff3b"
+    },
+    {
+      "path": "screenshots/05-sentence-recording.png",
+      "bytes": 336085,
+      "sha256": "1cfbeb513bb2a9ff43b90597ca9a014070d2a2c641907f22ee5a2cdfa07197da"
+    },
+    {
+      "path": "screenshots/06-failure-retry.png",
+      "bytes": 296363,
+      "sha256": "dd8ee6d1ffa27fd928ccb324ec48c6a8a76b5ac1eac2cb89caca8befce18bdbe"
+    },
+    {
+      "path": "screenshots/07-result.png",
+      "bytes": 385595,
+      "sha256": "539d0fb0b0faf5419019777c73e6af3a69ababd35f645f0b742bd7cb54945f35"
+    },
+    {
+      "path": "screenshots/08-stale-result.png",
+      "bytes": 397718,
+      "sha256": "edaad4bb60611efd97c69ca7ef84e68ab82107a7196b06e5f41ff9ba908bad4f"
+    }
+  ]
+}

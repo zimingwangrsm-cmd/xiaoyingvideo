@@ -1,6 +1,10 @@
 # 口播精简｜小影产品概念 Demo
 
-本地口播编辑 Demo：自动字幕、文字校对、按词/按句剪辑、必留保护、本地模型建议和真实 MP4 导出。当前发布为 **2026-11-07 句子录音与布局优化版**，在 `9a1e646` 上增量修改；此前独立审阅来源 `0166eb6`。本轮提交见 Git 历史。
+本地口播编辑 Demo：自动字幕、文字校对、按词/按句剪辑、必留保护、本地模型建议和真实 MP4 导出。当前为 **2026-11-07 最终交付版**。应用核心固定于 `fce60bf`，整合兼容性修复并完成本机复验。
+
+## 最终交付入口
+
+[最终材料与下载](deliverables/final_submission/README.md)：五页产品说明PDF/DOCX、AI使用记录、171.56秒实际操作视频、八图流程和完整ZIP。评审可直接下载附件或离线阅读，无需访问localhost或安装模型。技术验收见[FINAL_VALIDATION](deliverables/final_submission/FINAL_VALIDATION.md)。
 
 ## 2026-11-07 交互更新
 
@@ -24,11 +28,12 @@ ssh -N -L 8767:127.0.0.1:8767 <用户名>@<服务器地址>
 
 ## 启动与复现
 
-已有模型与素材时不要重新生成；启动两个终端：
+已有模型与素材时不要重新生成。本机最终Web环境为data/final_runtime，先激活该环境；全新环境按requirements-dev.txt安装。启动两个终端：
 
 ```bash
 bash scripts/run_local_model.sh
 # 另一个终端：
+source data/final_runtime/bin/activate
 DATA_DIR=data/acceptance_20261106 PORT=8767 bash scripts/run_v2.sh
 ```
 
@@ -41,7 +46,7 @@ npm run check
 npm run build
 ```
 
-本轮实测：**63项后端、14项前端检查通过**；桌面草稿/失败/迟到响应/跨项目/键盘、多项建议以及手机尺寸完整任务通过。真实Qwen推理记录与确定性交互fixture分别存档，不混算。浏览器任务是Chromium模拟，未替代实机软键盘和人工听审。完整证据见 [交付索引](deliverables/optimization/EVIDENCE_INDEX.json)。另在规则模式重跑21组旧浏览器流程通过。历史V2录屏/57项测试结论只对应其原版本。
+本轮实测：**67项后端、16项前端检查通过**；桌面草稿/失败/迟到响应/跨项目/键盘、多项建议以及手机尺寸完整任务通过。真实Qwen推理记录与确定性交互fixture分别存档，不混算。浏览器任务是Chromium模拟，未替代实机软键盘和人工听审。完整证据见 [最终交付索引](deliverables/final_submission/MANIFEST.json)。另在规则模式重跑21组旧浏览器流程通过。历史V2录屏/57项测试结论只对应其原版本。
 
 ## 数据和交付
 

@@ -1,0 +1,11 @@
+{
+  "captureSeconds": 59.999977,
+  "originalSentenceSeconds": 2.566666666666667,
+  "replacementSeconds": 60,
+  "plannedSeconds": 60,
+  "autoStop": true,
+  "realASR": true,
+  "renderDownloaded": true,
+  "pageErrors": [],
+  "microphone": "Chromium fixture microphone with attributed audio; not physical microphone or human quality validation"
+}

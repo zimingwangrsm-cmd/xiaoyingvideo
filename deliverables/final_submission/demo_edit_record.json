@@ -1,0 +1,224 @@
+{
+  "schemaVersion": 2,
+  "artifactId": "614cc9efa80040a6823dd88c93d1f4ed",
+  "projectId": "20b5e8ab7fd244e5bf962ede8ff44748",
+  "snapshotRevision": 9,
+  "renderKey": "e9a21cc9a1d2bdb2bdcd0690e8144a49137b7e733b3e7d22442273c67719a07a",
+  "sourceSha256": "d5e2916c26c75a8a63a0621f2b753e219dab04f4900eba52c3c50488aeca056b",
+  "origin": "recorded_sample",
+  "sampleInfo": {
+    "id": "real_tao_v2",
+    "title": "AI精简示例：语言背景一分钟简介",
+    "description": "真实口播128.2秒。演示预设：60秒以内，保留语言背景；开场和出生地为示范必留，可自行调整。",
+    "origin": "recorded_sample",
+    "label": "真人口播 · 本机识别字幕",
+    "durationMs": 128200.0,
+    "transcriptVerified": false,
+    "recommendedLockedIds": [],
+    "sourceUrl": "https://commons.wikimedia.org/wiki/File:WIKITONGUES-_Tao_speaking_Yunnan_Mandarin_with_Thai_and_Taiwanese_accent.webm",
+    "author": "Wikitongues, Teddy Nee",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+    "showcaseUrl": "/delivery",
+    "showcaseLabel": "已测纯AI建议：128.2秒 → 25.2秒（粗剪，字幕待校对）",
+    "thumbnailUrl": "/api/samples/real_tao_v2/poster",
+    "sourceSha256": "d5e2916c26c75a8a63a0621f2b753e219dab04f4900eba52c3c50488aeca056b"
+  },
+  "selection": {
+    "targetMs": 60000,
+    "keptBlockIds": [
+      "s01",
+      "s02",
+      "s03",
+      "s05",
+      "s08",
+      "s37"
+    ],
+    "lockedBlockIds": [
+      "s03"
+    ],
+    "suggestionSource": "local_llm",
+    "hasManualEdits": true,
+    "order": [
+      "s01",
+      "s02",
+      "s03",
+      "s04",
+      "s05",
+      "s06",
+      "s07",
+      "s08",
+      "s09",
+      "s10",
+      "s11",
+      "s12",
+      "s13",
+      "s14",
+      "s15",
+      "s16",
+      "s17",
+      "s18",
+      "s19",
+      "s20",
+      "s21",
+      "s22",
+      "s23",
+      "s24",
+      "s25",
+      "s26",
+      "s27",
+      "s28",
+      "s29",
+      "s30",
+      "s31",
+      "s32",
+      "s33",
+      "s34",
+      "s35",
+      "s36",
+      "s37"
+    ],
+    "deletedWordIds": [],
+    "captionEdits": {},
+    "wordEdits": {},
+    "notes": {},
+    "recordings": {},
+    "pendingRewrites": {},
+    "brief": "一分钟个人语言背景简介。保留云南来源、泰国出生、八岁移居台湾的完整时间线与一句结束语；整组省略家庭成员工作、书店活动、地址和邀约，避免“这里”“还有”等失去前提。可以短于60秒，不必填满。"
+  },
+  "spans": [
+    {
+      "sourceStartFrame": 0,
+      "sourceEndFrame": 195,
+      "outputStartFrame": 0,
+      "blockIds": [
+        "s01"
+      ]
+    },
+    {
+      "sourceStartFrame": 195,
+      "sourceEndFrame": 272,
+      "outputStartFrame": 195,
+      "blockIds": [
+        "s02"
+      ]
+    },
+    {
+      "sourceStartFrame": 272,
+      "sourceEndFrame": 463,
+      "outputStartFrame": 272,
+      "blockIds": [
+        "s03"
+      ]
+    },
+    {
+      "sourceStartFrame": 590,
+      "sourceEndFrame": 662,
+      "outputStartFrame": 463,
+      "blockIds": [
+        "s05"
+      ]
+    },
+    {
+      "sourceStartFrame": 873,
+      "sourceEndFrame": 1075,
+      "outputStartFrame": 535,
+      "blockIds": [
+        "s08"
+      ]
+    },
+    {
+      "sourceStartFrame": 3756,
+      "sourceEndFrame": 3846,
+      "outputStartFrame": 737,
+      "blockIds": [
+        "s37"
+      ]
+    }
+  ],
+  "captions": [
+    {
+      "id": "v0001",
+      "startMs": 166.66666666666669,
+      "endMs": 6500.0,
+      "text": "大家好,现在我要用云南话来看给大家听。"
+    },
+    {
+      "id": "v0002",
+      "startMs": 6500.0,
+      "endMs": 9066.666666666668,
+      "text": "我叫做朱导。"
+    },
+    {
+      "id": "v0003",
+      "startMs": 9066.666666666668,
+      "endMs": 15433.333333333334,
+      "text": "我是在泰国清迈出生的,算是华人。"
+    },
+    {
+      "id": "v0004",
+      "startMs": 15433.333333333334,
+      "endMs": 17833.333333333336,
+      "text": "后来又再到泰国。"
+    },
+    {
+      "id": "v0005",
+      "startMs": 17833.333333333336,
+      "endMs": 24566.666666666668,
+      "text": "我住到八岁的时候就是跟我爸我妈就搬到台湾来住了。"
+    },
+    {
+      "id": "v0006",
+      "startMs": 24566.666666666668,
+      "endMs": 25033.333333333336,
+      "text": "再见。"
+    }
+  ],
+  "plannedDurationMs": 27566.666666666668,
+  "actualDurationMs": 27588.0,
+  "targetMet": true,
+  "subtitles": "Separate SRT/VTT; not burned into MP4",
+  "videoSha256": "ecea478605f14cf0abd2a6ecc5b6a74484d4a7fc42dece29eae368902f03eaf5",
+  "subtitleSha256": "ee626bb9d476abc10fa0bd99d4d9bf5e53d6ed5df720b59800b1b297e80f2884",
+  "keptBlockIds": [
+    "s01",
+    "s02",
+    "s03",
+    "s05",
+    "s08",
+    "s37"
+  ],
+  "deletedBlockIds": [
+    "s04",
+    "s06",
+    "s07",
+    "s09",
+    "s10",
+    "s11",
+    "s12",
+    "s13",
+    "s14",
+    "s15",
+    "s16",
+    "s17",
+    "s18",
+    "s19",
+    "s20",
+    "s21",
+    "s22",
+    "s23",
+    "s24",
+    "s25",
+    "s26",
+    "s27",
+    "s28",
+    "s29",
+    "s30",
+    "s31",
+    "s32",
+    "s33",
+    "s34",
+    "s35",
+    "s36"
+  ]
+}
